@@ -226,7 +226,6 @@ export default function Home() {
             <li><a href="#evento">Evento Final</a></li>
             <li><a href="#torneos">Microtorneos</a></li>
             <li><a href="#clasificados">Clasificados</a></li>
-            <li><a href="#inscripcion">Inscribirse</a></li>
           </ul>
           <a href="#inscripcion" className="nav-cta">QUIERO JUGAR</a>
         </div>
@@ -307,7 +306,7 @@ export default function Home() {
           <div className="evento-info">
             <h2 className="section-title">La Gran Final<br /><em>te espera</em></h2>
             <p className="evento-desc">
-              Después de meses de batalla en los microtorneos clasificatorios, los 16 mejores se enfrentan en un microestadio real. Tribunas, pantallas gigantes, transmisión en vivo. El PES6 como nunca lo viste.
+              Después de meses de torneos clasificatorios, los 16 mejores se enfrentan en un microestadio real. Tribunas, pantallas gigantes, transmisión en vivo. El PES6 como nunca lo viste.
             </p>
             <ul className="evento-features">
               <li>
@@ -320,11 +319,10 @@ export default function Home() {
               </li>
               <li>
                 <span className="feat-icon">🎮</span>
-                <div><strong>PES6 Oficial</strong><br />El clásico de culto que sigue vivo gracias a la comunidad</div>
+                <div><strong>PES6 Oficial</strong><br />El clásico que sigue vivo gracias a la comunidad</div>
               </li>
               <li>
                 <span className="feat-icon">🎙️</span>
-                <div><strong>Presentado por ValenFulvo</strong><br />El creador que hizo historia en el fútbol virtual argentino</div>
               </li>
             </ul>
             <a href="#inscripcion" className="btn-primary">QUIERO ESTAR AHÍ</a>
@@ -347,7 +345,7 @@ export default function Home() {
             <div className="step-num">01</div>
             <div className="step-icon">📝</div>
             <h3>Inscribite</h3>
-            <p>Completá el formulario con tu nick, modalidad (individual o pareja) y el torneo al que querés entrar. Las plazas son limitadas — 16 por torneo.</p>
+            <p>Contactanos por nuestras redes sociales, las encontrarás más abajo de la web. Cuenta porque mereces un lugar en los torneos.</p>
           </div>
           <div className="step-card">
             <div className="step-num">02</div>
