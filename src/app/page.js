@@ -26,7 +26,8 @@ export default function Home() {
   
   // Admin Form - Clasificados
   const [cNick, setCNick] = useState('');
-  const [cImg, setCImg] = useState('');
+  const [cImgFile, setCImgFile] = useState(null);
+  const [uploading, setUploading] = useState(false);
   const [cDesc, setCDesc] = useState('');
   
   // Admin Form - Torneos
@@ -515,17 +516,29 @@ export default function Home() {
                 <div>
                   <div style={{background:'rgba(255,255,255,0.05)', padding:'15px', borderRadius:'8px', marginBottom:'20px', display:'flex', flexDirection:'column', gap:'10px'}}>
                     <input type="text" placeholder="Nick / Nombre" value={cNick} onChange={e=>setCNick(e.target.value)} style={{padding:'8px', background:'rgba(255,255,255,0.05)', border:'1px solid rgba(255,255,255,0.1)', color:'white'}} />
-                    <input type="text" placeholder="URL de foto (opcional)" value={cImg} onChange={e=>setCImg(e.target.value)} style={{padding:'8px', background:'rgba(255,255,255,0.05)', border:'1px solid rgba(255,255,255,0.1)', color:'white'}} />
+                    <input type="file" id="fileInputFoto" accept="image/*" onChange={e=>{ if(e.target.files && e.target.files[0]) setCImgFile(e.target.files[0]) }} style={{padding:'8px', background:'rgba(255,255,255,0.05)', border:'1px solid rgba(255,255,255,0.1)', color:'white'}} />
                     <input type="text" placeholder="Descripción (ej: Campeón Torneo #3)" value={cDesc} onChange={e=>setCDesc(e.target.value)} style={{padding:'8px', background:'rgba(255,255,255,0.05)', border:'1px solid rgba(255,255,255,0.1)', color:'white'}} />
-                    <button className="btn-primary" style={{padding:'8px', background:'var(--gold)', border:'none', fontWeight:'bold', borderRadius:'5px'}} onClick={async () => {
+                    <button className="btn-primary" disabled={uploading} style={{padding:'8px', background: uploading ? 'var(--grey)' : 'var(--gold)', border:'none', fontWeight:'bold', borderRadius:'5px'}} onClick={async () => {
+                      if (!cNick) return showToast('El Nick es obligatorio', 'warning');
                       try {
-                        const res = await addClasificado(adminPass, cNick, cImg, cDesc);
-                        if(res && res.error) { showToast(res.error, 'warning'); return; }
-                        setCNick(''); setCImg(''); setCDesc('');
+                        setUploading(true);
+                        let fotoUrl = '';
+                        if (cImgFile) {
+                          const fileExt = cImgFile.name.split('.').pop();
+                          const fileName = `${Date.now()}.${fileExt}`;
+                          const { data, error } = await supabase.storage.from('campeones').upload(fileName, cImgFile);
+                          if (error) throw new Error('Error al subir imagen a Supabase');
+                          const { data: { publicUrl } } = supabase.storage.from('campeones').getPublicUrl(fileName);
+                          fotoUrl = publicUrl;
+                        }
+                        const res = await addClasificado(adminPass, cNick, fotoUrl, cDesc);
+                        if(res && res.error) { showToast(res.error, 'warning'); setUploading(false); return; }
+                        setCNick(''); setCImgFile(null); setCDesc('');
+                        document.getElementById('fileInputFoto').value = '';
                         fetchDatos();
                         showToast('Clasificado agregado');
-                      } catch (e) { showToast('Error al agregar', 'warning'); }
-                    }}>AGREGAR CLASIFICADO</button>
+                      } catch (e) { showToast(e.message || 'Error al agregar', 'warning'); } finally { setUploading(false); }
+                    }}>{uploading ? 'SUBIENDO...' : 'AGREGAR CLASIFICADO'}</button>
                   </div>
                   
                   <div style={{display:'flex', flexDirection:'column', gap:'10px'}}>
