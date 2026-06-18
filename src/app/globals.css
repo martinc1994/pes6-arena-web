@@ -108,7 +108,7 @@ body {
   align-items: center;
   justify-content: center;
   overflow: hidden;
-  background: url('recursos/microestadioexterior.jpeg') center/cover no-repeat;
+  background: url('/recursos/microestadioexterior.jpeg') center/cover no-repeat;
 }
 .pitch-canvas {
   position: absolute;

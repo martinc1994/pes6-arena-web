@@ -240,7 +240,7 @@ export default function Home() {
         <div className="evento-container">
           <div className="evento-visual">
             <div className="stadium-img-wrapper">
-              <img src="recursos/microestadiointerior.jpeg" alt="Microestadio Garín" className="stadium-img" />
+              <img src="/recursos/microestadiointerior.jpeg" alt="Microestadio Garín" className="stadium-img" />
               <div className="stadium-badge">
                 <span className="badge-date">21 NOV</span>
               </div>
