@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { supabase } from '@/lib/supabase';
+import confetti from 'canvas-confetti';
 import { checkAdminPassword, addClasificado, removeClasificado, createTorneo, updateTorneo, removeTorneo, voteClasificado } from './actions';
 
 export default function Home() {
@@ -154,6 +155,58 @@ export default function Home() {
       { nombre: 'Semifinales', partidos: Array(2).fill(null).map((_, i) => ({ id: i, local: '', visitante: '', golesLocal: '', golesVisitante: '', ganador: '' })) },
       { nombre: 'Final', partidos: [{ id: 0, local: '', visitante: '', golesLocal: '', golesVisitante: '', ganador: '' }] },
     ];
+  };
+
+  const propagateWinner = async (nt, rIdx, pIdx) => {
+    const p = nt.partidos[rIdx].partidos[pIdx];
+    const nextRIdx = rIdx + 1;
+    
+    if (nextRIdx < nt.partidos.length) {
+      const nextPIdx = Math.floor(pIdx / 2);
+      const isLocalNext = pIdx % 2 === 0;
+      if (isLocalNext) {
+        nt.partidos[nextRIdx].partidos[nextPIdx].local = p.ganador || '';
+      } else {
+        nt.partidos[nextRIdx].partidos[nextPIdx].visitante = p.ganador || '';
+      }
+      
+      // Auto-cascade if we unset a winner? We leave that simple for now.
+    } else {
+      if (p.ganador) {
+        confetti({ particleCount: 200, spread: 80, origin: { y: 0.6 } });
+      }
+    }
+    setCurrentTorneo(nt);
+    await updateTorneo(adminPass, nt.id, { partidos: nt.partidos });
+    fetchDatos();
+  };
+
+  const updateScore = async (rIdx, pIdx, isLocal, val) => {
+    const nt = {...currentTorneo};
+    nt.partidos = JSON.parse(JSON.stringify(nt.partidos));
+    const p = nt.partidos[rIdx].partidos[pIdx];
+    
+    if (isLocal) p.golesLocal = val;
+    else p.golesVisitante = val;
+
+    if (p.golesLocal !== '' && p.golesVisitante !== '') {
+      const gl = parseInt(p.golesLocal);
+      const gv = parseInt(p.golesVisitante);
+      if (gl > gv) p.ganador = p.local;
+      else if (gv > gl) p.ganador = p.visitante;
+      else p.ganador = ''; // Tie, wait for manual select
+    } else {
+      p.ganador = '';
+    }
+    
+    await propagateWinner(nt, rIdx, pIdx);
+  };
+
+  const setManualWinner = async (rIdx, pIdx, winnerName) => {
+    const nt = {...currentTorneo};
+    nt.partidos = JSON.parse(JSON.stringify(nt.partidos));
+    nt.partidos[rIdx].partidos[pIdx].ganador = winnerName;
+    await propagateWinner(nt, rIdx, pIdx);
   };
 
   return (
@@ -547,35 +600,29 @@ export default function Home() {
                     {ronda.partidos.map((p, pIdx) => (
                       <div key={pIdx} style={{background:'rgba(255,255,255,0.05)', padding:'10px', borderRadius:'8px', border:'1px solid rgba(255,255,255,0.1)'}}>
                         <div style={{display:'flex', flexDirection:'column', gap:'5px'}}>
-                          <input type="text" placeholder="Local" value={p.local} onChange={async (e) => {
+                          <input type="text" placeholder="Local" value={p.local} readOnly={rIdx > 0} onChange={async (e) => {
+                            if (rIdx > 0) return;
                             const nt = {...currentTorneo}; nt.partidos[rIdx].partidos[pIdx].local = e.target.value; setCurrentTorneo(nt);
                             await updateTorneo(adminPass, currentTorneo.id, { partidos: nt.partidos }); fetchDatos();
-                          }} style={{background:'var(--dark)', color:'white', border:'1px solid #333', padding:'4px'}} />
-                          <input type="text" placeholder="Visitante" value={p.visitante} onChange={async (e) => {
+                          }} style={{background: rIdx > 0 ? 'rgba(0,0,0,0.3)' : 'var(--dark)', color: p.ganador===p.local?'var(--gold)':'white', border:'1px solid #333', padding:'4px', fontWeight: p.ganador===p.local?'bold':'normal'}} />
+                          
+                          <input type="text" placeholder="Visitante" value={p.visitante} readOnly={rIdx > 0} onChange={async (e) => {
+                            if (rIdx > 0) return;
                             const nt = {...currentTorneo}; nt.partidos[rIdx].partidos[pIdx].visitante = e.target.value; setCurrentTorneo(nt);
                             await updateTorneo(adminPass, currentTorneo.id, { partidos: nt.partidos }); fetchDatos();
-                          }} style={{background:'var(--dark)', color:'white', border:'1px solid #333', padding:'4px'}} />
+                          }} style={{background: rIdx > 0 ? 'rgba(0,0,0,0.3)' : 'var(--dark)', color: p.ganador===p.visitante?'var(--gold)':'white', border:'1px solid #333', padding:'4px', fontWeight: p.ganador===p.visitante?'bold':'normal'}} />
+                          
                           <div style={{display:'flex', gap:'10px', marginTop:'5px'}}>
-                            <input type="number" value={p.golesLocal} placeholder="0" style={{width:'50px', background:'var(--dark)', color:'white', border:'1px solid #333'}} onChange={async (e) => {
-                              const nt = {...currentTorneo}; nt.partidos[rIdx].partidos[pIdx].golesLocal = e.target.value; setCurrentTorneo(nt);
-                              await updateTorneo(adminPass, currentTorneo.id, { partidos: nt.partidos }); fetchDatos();
-                            }} />
+                            <input type="number" value={p.golesLocal} placeholder="0" style={{width:'50px', background:'var(--dark)', color:'white', border:'1px solid #333'}} onChange={(e) => updateScore(rIdx, pIdx, true, e.target.value)} />
                             <span style={{color:'var(--grey)'}}>-</span>
-                            <input type="number" value={p.golesVisitante} placeholder="0" style={{width:'50px', background:'var(--dark)', color:'white', border:'1px solid #333'}} onChange={async (e) => {
-                              const nt = {...currentTorneo}; nt.partidos[rIdx].partidos[pIdx].golesVisitante = e.target.value; setCurrentTorneo(nt);
-                              await updateTorneo(adminPass, currentTorneo.id, { partidos: nt.partidos }); fetchDatos();
-                            }} />
+                            <input type="number" value={p.golesVisitante} placeholder="0" style={{width:'50px', background:'var(--dark)', color:'white', border:'1px solid #333'}} onChange={(e) => updateScore(rIdx, pIdx, false, e.target.value)} />
                           </div>
-                          {(p.local && p.visitante) && (
+                          
+                          {(p.local && p.visitante && p.golesLocal !== '' && p.golesVisitante !== '' && p.golesLocal === p.golesVisitante) && (
                             <div style={{display:'flex', gap:'5px', marginTop:'5px'}}>
-                              <button style={{fontSize:'0.7rem', padding:'2px', background: p.ganador===p.local?'rgba(255,215,0,0.3)':'transparent', border:'1px solid var(--gold)', color:'white', cursor:'pointer'}} onClick={async () => {
-                                const nt = {...currentTorneo}; nt.partidos[rIdx].partidos[pIdx].ganador = p.local; setCurrentTorneo(nt);
-                                await updateTorneo(adminPass, currentTorneo.id, { partidos: nt.partidos }); fetchDatos();
-                              }}>{p.local}</button>
-                              <button style={{fontSize:'0.7rem', padding:'2px', background: p.ganador===p.visitante?'rgba(255,215,0,0.3)':'transparent', border:'1px solid var(--gold)', color:'white', cursor:'pointer'}} onClick={async () => {
-                                const nt = {...currentTorneo}; nt.partidos[rIdx].partidos[pIdx].ganador = p.visitante; setCurrentTorneo(nt);
-                                await updateTorneo(adminPass, currentTorneo.id, { partidos: nt.partidos }); fetchDatos();
-                              }}>{p.visitante}</button>
+                              <span style={{fontSize:'0.7rem', color:'var(--grey)', alignSelf:'center'}}>Ganador:</span>
+                              <button style={{fontSize:'0.7rem', padding:'2px', background: p.ganador===p.local?'rgba(255,215,0,0.3)':'transparent', border:'1px solid var(--gold)', color:'white', cursor:'pointer'}} onClick={() => setManualWinner(rIdx, pIdx, p.local)}>{p.local}</button>
+                              <button style={{fontSize:'0.7rem', padding:'2px', background: p.ganador===p.visitante?'rgba(255,215,0,0.3)':'transparent', border:'1px solid var(--gold)', color:'white', cursor:'pointer'}} onClick={() => setManualWinner(rIdx, pIdx, p.visitante)}>{p.visitante}</button>
                             </div>
                           )}
                         </div>
