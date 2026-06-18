@@ -323,6 +323,7 @@ export default function Home() {
               </li>
               <li>
                 <span className="feat-icon">🎙️</span>
+                <div><strong>Animado y relatado por</strong><br />ValenFulvo y amigos</div>
               </li>
             </ul>
             <a href="#inscripcion" className="btn-primary">QUIERO ESTAR AHÍ</a>
