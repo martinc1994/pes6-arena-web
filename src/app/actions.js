@@ -12,10 +12,19 @@ export async function checkAdminPassword(password) {
   return verifyPassword(password);
 }
 
-export async function addClasificado(password, nick, foto, desc_text) {
+export async function addClasificado(password, nick, foto, desc_text, equipo = '', edad = '', localidad = '', historia = '', youtube_links = []) {
   if (!verifyPassword(password)) return { error: "Contraseña incorrecta" };
-  const { data, error } = await supabase.from('clasificados').insert([{ nick, foto, desc_text }]).select();
+  const { data, error } = await supabase.from('clasificados').insert([{ 
+    nick, foto, desc_text, equipo, edad, localidad, historia, youtube_links 
+  }]).select();
   if (error) return { error: "Error al guardar en base de datos" };
+  return { success: true, data };
+}
+
+export async function updateClasificado(password, id, updates) {
+  if (!verifyPassword(password)) return { error: "Contraseña incorrecta" };
+  const { data, error } = await supabase.from('clasificados').update(updates).eq('id', id).select();
+  if (error) return { error: "Error al actualizar en base de datos" };
   return { success: true, data };
 }
 

@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import confetti from 'canvas-confetti';
-import { checkAdminPassword, addClasificado, removeClasificado, createTorneo, updateTorneo, removeTorneo, voteClasificado } from './actions';
+import { checkAdminPassword, addClasificado, removeClasificado, updateClasificado, createTorneo, updateTorneo, removeTorneo, voteClasificado } from './actions';
 
 export default function Home() {
   const canvasRef = useRef(null);
@@ -30,6 +30,20 @@ export default function Home() {
   const [uploading, setUploading] = useState(false);
   const [cDesc, setCDesc] = useState('');
   
+  // Admin Form Extra - Clasificados
+  const [cEquipo, setCEquipo] = useState('');
+  const [cEdad, setCEdad] = useState('');
+  const [cLocalidad, setCLocalidad] = useState('');
+  const [cHistoria, setCHistoria] = useState('');
+  const [cYoutube1, setCYoutube1] = useState('');
+  const [cYoutube2, setCYoutube2] = useState('');
+  const [cYoutube3, setCYoutube3] = useState('');
+  const [editMode, setEditMode] = useState(false);
+  const [editingId, setEditingId] = useState(null);
+
+  // Detail Modal
+  const [selectedChampion, setSelectedChampion] = useState(null);
+  
   // Admin Form - Torneos
   const [tNombre, setTNombre] = useState('');
   const [tFecha, setTFecha] = useState('');
@@ -42,6 +56,65 @@ export default function Home() {
   const showToast = (msg, type = 'success') => {
     setToastMsg({ msg, type });
     setTimeout(() => setToastMsg(null), 2800);
+  };
+
+  const getYoutubeEmbedUrl = (url) => {
+    if (!url) return null;
+    let videoId = null;
+    try {
+      const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=|shorts\/)([^#\&\?]*).*/;
+      const match = url.match(regExp);
+      if (match && match[2].length === 11) {
+        videoId = match[2];
+      }
+    } catch (e) {
+      console.error("Error parsing youtube url", e);
+    }
+    return videoId ? `https://www.youtube.com/embed/${videoId}` : null;
+  };
+
+  const getNickAndEquipo = (c) => {
+    if (c.equipo) {
+      return { name: c.nick, team: c.equipo };
+    }
+    if (c.nick && c.nick.includes(' - ')) {
+      const parts = c.nick.split(' - ');
+      return { name: parts[0], team: parts[1] };
+    }
+    return { name: c.nick || '', team: '' };
+  };
+
+  const startEdit = (c) => {
+    setEditMode(true);
+    setEditingId(c.id);
+    setCNick(c.nick || '');
+    setCDesc(c.desc_text || '');
+    setCEquipo(c.equipo || '');
+    setCEdad(c.edad || '');
+    setCLocalidad(c.localidad || '');
+    setCHistoria(c.historia || '');
+    setCYoutube1(c.youtube_links?.[0] || '');
+    setCYoutube2(c.youtube_links?.[1] || '');
+    setCYoutube3(c.youtube_links?.[2] || '');
+    setAdminTab('clasificados');
+  };
+
+  const cancelEdit = () => {
+    setEditMode(false);
+    setEditingId(null);
+    setCNick('');
+    setCDesc('');
+    setCEquipo('');
+    setCEdad('');
+    setCLocalidad('');
+    setCHistoria('');
+    setCYoutube1('');
+    setCYoutube2('');
+    setCYoutube3('');
+    if (document.getElementById('fileInputFoto')) {
+      document.getElementById('fileInputFoto').value = '';
+    }
+    setCImgFile(null);
   };
 
   const fetchDatos = async () => {
@@ -223,9 +296,9 @@ export default function Home() {
             <span className="logo-cup">PES6</span>
           </div>
           <ul className="nav-links">
+            <li><a href="#clasificados">Clasificados</a></li>
             <li><a href="#evento">Evento Final</a></li>
             <li><a href="#torneos">Microtorneos</a></li>
-            <li><a href="#clasificados">Clasificados</a></li>
           </ul>
           <a href="#inscripcion" className="nav-cta">QUIERO JUGAR</a>
         </div>
@@ -286,6 +359,55 @@ export default function Home() {
           <span>SCROLL</span>
           <div className="scroll-line"></div>
         </div>
+      </section>
+
+      <section className="section-clasificados" id="clasificados">
+        <div className="section-label">
+          <span className="label-line"></span>
+          <span className="label-text">CLASIFICADOS</span>
+          <span className="label-line"></span>
+        </div>
+        <h2 className="section-title centered">Los que ya<br /><em>están adentro</em></h2>
+        <p className="section-sub centered">Estos campeones de microtorneos ya tienen su lugar en el Microestadio. Votá a tu favorito para la Gran Final.</p>
+
+        <div className="voting-notice">
+          <span>⚡</span>
+          <span>Votación activa — 2 votos por dispositivo cada 24 horas</span>
+        </div>
+
+        <div className="clasificados-grid">
+          {clasificados.map(c => {
+            const { name, team } = getNickAndEquipo(c);
+            return (
+              <div key={c.id} className="champion-card fade-in visible" onClick={() => setSelectedChampion(c)} style={{ cursor: 'pointer' }}>
+                <div className="champion-badge">CLASIFICADO</div>
+                {c.foto ? (
+                  <img className="champion-photo" src={c.foto} alt={name} onError={(e)=>{e.target.style.display='none'; e.target.nextSibling.style.display='flex'}} />
+                ) : null}
+                <div className="champion-photo-placeholder" style={{display: c.foto ? 'none' : 'flex'}}>🎮</div>
+                
+                <div className="champion-info">
+                  <div className="champion-nick">{name}</div>
+                  <div className="champion-desc" style={{ color: 'var(--gold)', textTransform: 'uppercase', fontWeight: 600, letterSpacing: '1.5px', fontSize: '0.8rem', marginTop: '0.2rem' }}>{team || 'Sin Equipo'}</div>
+                  <div className="vote-btns" style={{ marginTop: '0.75rem' }}>
+                    <button className="vote-btn like" onClick={(e) => { e.stopPropagation(); handleVote(c.id, 'like'); }}>
+                      👍 <span>{c.likes || 0}</span>
+                    </button>
+                    <button className="vote-btn dislike" onClick={(e) => { e.stopPropagation(); handleVote(c.id, 'dislike'); }}>
+                      👎 <span>{c.dislikes || 0}</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        {16 - clasificados.length > 0 && (
+          <p className="clasificados-pending" style={{marginTop:'2rem', textAlign:'center', color:'var(--grey)'}}>
+            {16 - clasificados.length} lugares aún sin clasificado — los próximos torneos lo definirán.
+          </p>
+        )}
       </section>
 
       <section className="section-evento" id="evento">
@@ -367,52 +489,6 @@ export default function Home() {
             <p>En la Gran Final, los 16 campeones luchan por el título máximo. Tribunas llenas, transmisión en vivo, historia para siempre.</p>
           </div>
         </div>
-      </section>
-
-      <section className="section-clasificados" id="clasificados">
-        <div className="section-label">
-          <span className="label-line"></span>
-          <span className="label-text">CLASIFICADOS</span>
-          <span className="label-line"></span>
-        </div>
-        <h2 className="section-title centered">Los que ya<br /><em>están adentro</em></h2>
-        <p className="section-sub centered">Estos campeones de microtorneos ya tienen su lugar en el Microestadio. Votá a tu favorito para la Gran Final.</p>
-
-        <div className="voting-notice">
-          <span>⚡</span>
-          <span>Votación activa — 2 votos por dispositivo cada 24 horas</span>
-        </div>
-
-        <div className="clasificados-grid">
-          {clasificados.map(c => (
-            <div key={c.id} className="champion-card fade-in visible">
-              <div className="champion-badge">CLASIFICADO</div>
-              {c.foto ? (
-                <img className="champion-photo" src={c.foto} alt={c.nick} onError={(e)=>{e.target.style.display='none'; e.target.nextSibling.style.display='flex'}} />
-              ) : null}
-              <div className="champion-photo-placeholder" style={{display: c.foto ? 'none' : 'flex'}}>🎮</div>
-              
-              <div className="champion-info">
-                <div className="champion-nick">{c.nick}</div>
-                <div className="champion-desc">{c.desc_text}</div>
-                <div className="vote-btns">
-                  <button className="vote-btn like" onClick={() => handleVote(c.id, 'like')}>
-                    👍 <span>{c.likes || 0}</span>
-                  </button>
-                  <button className="vote-btn dislike" onClick={() => handleVote(c.id, 'dislike')}>
-                    👎 <span>{c.dislikes || 0}</span>
-                  </button>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-
-        {16 - clasificados.length > 0 && (
-          <p className="clasificados-pending" style={{marginTop:'2rem', textAlign:'center', color:'var(--grey)'}}>
-            {16 - clasificados.length} lugares aún sin clasificado — los próximos torneos lo definirán.
-          </p>
-        )}
       </section>
 
       <section className="section-inscripcion" id="inscripcion">
@@ -515,15 +591,40 @@ export default function Home() {
 
               {adminTab === 'clasificados' && (
                 <div>
-                  <div style={{background:'rgba(255,255,255,0.05)', padding:'15px', borderRadius:'8px', marginBottom:'20px', display:'flex', flexDirection:'column', gap:'10px'}}>
+                  <div style={{background:'rgba(255,255,255,0.05)', padding:'15px', borderRadius:'8px', marginBottom:'20px', display:'flex', flexDirection:'column', gap:'12px'}}>
+                    <div style={{fontSize:'0.8rem', fontWeight:'bold', color:'var(--gold)', letterSpacing:'1px', textTransform:'uppercase'}}>
+                      {editMode ? 'Editar Campeón' : 'Agregar Nuevo Campeón'}
+                    </div>
+                    
                     <input type="text" placeholder="Nick / Nombre" value={cNick} onChange={e=>setCNick(e.target.value)} style={{padding:'8px', background:'rgba(255,255,255,0.05)', border:'1px solid rgba(255,255,255,0.1)', color:'white'}} />
-                    <input type="file" id="fileInputFoto" accept="image/*" onChange={e=>{ if(e.target.files && e.target.files[0]) setCImgFile(e.target.files[0]) }} style={{padding:'8px', background:'rgba(255,255,255,0.05)', border:'1px solid rgba(255,255,255,0.1)', color:'white'}} />
-                    <input type="text" placeholder="Descripción (ej: Campeón Torneo #3)" value={cDesc} onChange={e=>setCDesc(e.target.value)} style={{padding:'8px', background:'rgba(255,255,255,0.05)', border:'1px solid rgba(255,255,255,0.1)', color:'white'}} />
-                    <button className="btn-primary" disabled={uploading} style={{padding:'8px', background: uploading ? 'var(--grey)' : 'var(--gold)', border:'none', fontWeight:'bold', borderRadius:'5px'}} onClick={async () => {
+                    <input type="text" placeholder="Equipo (ej: ARSENAL)" value={cEquipo} onChange={e=>setCEquipo(e.target.value)} style={{padding:'8px', background:'rgba(255,255,255,0.05)', border:'1px solid rgba(255,255,255,0.1)', color:'white'}} />
+                    
+                    <div style={{display:'flex', gap:'10px'}}>
+                      <input type="text" placeholder="Edad (ej: 25 años)" value={cEdad} onChange={e=>setCEdad(e.target.value)} style={{padding:'8px', flex:1, background:'rgba(255,255,255,0.05)', border:'1px solid rgba(255,255,255,0.1)', color:'white'}} />
+                      <input type="text" placeholder="Localidad (ej: Buenos Aires)" value={cLocalidad} onChange={e=>setCLocalidad(e.target.value)} style={{padding:'8px', flex:1, background:'rgba(255,255,255,0.05)', border:'1px solid rgba(255,255,255,0.1)', color:'white'}} />
+                    </div>
+
+                    <textarea placeholder="Historia / Descripción detallada" value={cHistoria} onChange={e=>setCHistoria(e.target.value)} rows={3} style={{padding:'8px', background:'rgba(255,255,255,0.05)', border:'1px solid rgba(255,255,255,0.1)', color:'white', resize:'vertical', fontFamily:'inherit'}} />
+                    
+                    <div style={{border:'1px solid rgba(255,255,255,0.05)', padding:'10px', borderRadius:'6px', display:'flex', flexDirection:'column', gap:'8px'}}>
+                      <span style={{fontSize:'0.75rem', color:'var(--grey)', fontWeight:'bold'}}>Videos de YouTube (Hasta 3 links)</span>
+                      <input type="text" placeholder="Link de YouTube 1" value={cYoutube1} onChange={e=>setCYoutube1(e.target.value)} style={{padding:'6px', fontSize:'0.85rem', background:'rgba(255,255,255,0.05)', border:'1px solid rgba(255,255,255,0.1)', color:'white'}} />
+                      <input type="text" placeholder="Link de YouTube 2" value={cYoutube2} onChange={e=>setCYoutube2(e.target.value)} style={{padding:'6px', fontSize:'0.85rem', background:'rgba(255,255,255,0.05)', border:'1px solid rgba(255,255,255,0.1)', color:'white'}} />
+                      <input type="text" placeholder="Link de YouTube 3" value={cYoutube3} onChange={e=>setCYoutube3(e.target.value)} style={{padding:'6px', fontSize:'0.85rem', background:'rgba(255,255,255,0.05)', border:'1px solid rgba(255,255,255,0.1)', color:'white'}} />
+                    </div>
+
+                    <div style={{display:'flex', flexDirection:'column', gap:'5px'}}>
+                      <label style={{fontSize:'0.7rem', color:'var(--grey)'}}>Foto del Campeón {editMode && '(dejar en blanco para mantener la actual)'}</label>
+                      <input type="file" id="fileInputFoto" accept="image/*" onChange={e=>{ if(e.target.files && e.target.files[0]) setCImgFile(e.target.files[0]) }} style={{padding:'8px', background:'rgba(255,255,255,0.05)', border:'1px solid rgba(255,255,255,0.1)', color:'white'}} />
+                    </div>
+
+                    <input type="text" placeholder="Detalle rápido / Badge (ej: Campeón Torneo #3)" value={cDesc} onChange={e=>setCDesc(e.target.value)} style={{padding:'8px', background:'rgba(255,255,255,0.05)', border:'1px solid rgba(255,255,255,0.1)', color:'white'}} />
+                    
+                    <button className="btn-primary" disabled={uploading} style={{padding:'10px', background: uploading ? 'var(--grey)' : 'var(--gold)', border:'none', fontWeight:'bold', borderRadius:'5px', marginTop:'5px'}} onClick={async () => {
                       if (!cNick) return showToast('El Nick es obligatorio', 'warning');
                       try {
                         setUploading(true);
-                        let fotoUrl = '';
+                        let fotoUrl = editMode ? (clasificados.find(x => x.id === editingId)?.foto || '') : '';
                         if (cImgFile) {
                           const fileExt = cImgFile.name.split('.').pop();
                           const fileName = `${Date.now()}.${fileExt}`;
@@ -532,31 +633,59 @@ export default function Home() {
                           const { data: { publicUrl } } = supabase.storage.from('campeones').getPublicUrl(fileName);
                           fotoUrl = publicUrl;
                         }
-                        const res = await addClasificado(adminPass, cNick, fotoUrl, cDesc);
-                        if(res && res.error) { showToast(res.error, 'warning'); setUploading(false); return; }
-                        setCNick(''); setCImgFile(null); setCDesc('');
-                        document.getElementById('fileInputFoto').value = '';
+
+                        const youtube_links = [cYoutube1, cYoutube2, cYoutube3].filter(Boolean);
+
+                        if (editMode) {
+                          const res = await updateClasificado(adminPass, editingId, {
+                            nick: cNick,
+                            foto: fotoUrl,
+                            desc_text: cDesc,
+                            equipo: cEquipo,
+                            edad: cEdad,
+                            localidad: cLocalidad,
+                            historia: cHistoria,
+                            youtube_links
+                          });
+                          if(res && res.error) { showToast(res.error, 'warning'); setUploading(false); return; }
+                          showToast('Clasificado actualizado');
+                        } else {
+                          const res = await addClasificado(adminPass, cNick, fotoUrl, cDesc, cEquipo, cEdad, cLocalidad, cHistoria, youtube_links);
+                          if(res && res.error) { showToast(res.error, 'warning'); setUploading(false); return; }
+                          showToast('Clasificado agregado');
+                        }
+                        
+                        cancelEdit();
                         fetchDatos();
-                        showToast('Clasificado agregado');
-                      } catch (e) { showToast(e.message || 'Error al agregar', 'warning'); } finally { setUploading(false); }
-                    }}>{uploading ? 'SUBIENDO...' : 'AGREGAR CLASIFICADO'}</button>
+                      } catch (e) { showToast(e.message || 'Error al guardar', 'warning'); } finally { setUploading(false); }
+                    }}>{uploading ? 'GUARDANDO...' : (editMode ? 'GUARDAR CAMBIOS' : 'AGREGAR CLASIFICADO')}</button>
+                    
+                    {editMode && (
+                      <button className="btn-ghost" style={{padding:'8px', border:'1px solid rgba(255,255,255,0.2)', color:'white', borderRadius:'5px', fontWeight:'bold'}} onClick={cancelEdit}>CANCELAR EDICIÓN</button>
+                    )}
                   </div>
                   
                   <div style={{display:'flex', flexDirection:'column', gap:'10px'}}>
-                    {clasificados.map(c => (
-                      <div key={c.id} style={{display:'flex', justifyContent:'space-between', background:'rgba(255,255,255,0.05)', padding:'10px', borderRadius:'8px'}}>
-                        <div>
-                          <div style={{fontWeight:'bold'}}>{c.nick}</div>
-                          <div style={{fontSize:'0.8rem', color:'var(--grey)'}}>{c.desc_text}</div>
+                    {clasificados.map(c => {
+                      const { name, team } = getNickAndEquipo(c);
+                      return (
+                        <div key={c.id} style={{display:'flex', justifyContent:'space-between', alignItems:'center', background:'rgba(255,255,255,0.05)', padding:'10px', borderRadius:'8px'}}>
+                          <div>
+                            <div style={{fontWeight:'bold'}}>{name}</div>
+                            <div style={{fontSize:'0.8rem', color:'var(--gold)'}}>{team || 'Sin Equipo'}</div>
+                          </div>
+                          <div style={{display:'flex', gap:'8px'}}>
+                            <button style={{background:'rgba(255,215,0,0.15)', border:'1px solid var(--gold)', color:'var(--gold)', padding:'5px 10px', borderRadius:'5px', cursor:'pointer'}} onClick={() => startEdit(c)}>✏️</button>
+                            <button style={{background:'rgba(232,0,61,0.2)', border:'1px solid var(--red)', color:'var(--red)', padding:'5px 10px', borderRadius:'5px', cursor:'pointer'}} onClick={async () => {
+                              if(confirm('¿Eliminar?')) {
+                                await removeClasificado(adminPass, c.id);
+                                fetchDatos();
+                              }
+                            }}>✕</button>
+                          </div>
                         </div>
-                        <button style={{background:'rgba(232,0,61,0.2)', border:'1px solid var(--red)', color:'var(--red)', padding:'5px 10px', borderRadius:'5px', cursor:'pointer'}} onClick={async () => {
-                          if(confirm('¿Eliminar?')) {
-                            await removeClasificado(adminPass, c.id);
-                            fetchDatos();
-                          }
-                        }}>✕</button>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 </div>
               )}
@@ -675,6 +804,83 @@ export default function Home() {
           </div>
         </div>
       )}
+
+      {/* Detail Modal (Detalle Campeón) */}
+      {selectedChampion && (() => {
+        const { name, team } = getNickAndEquipo(selectedChampion);
+        const embedUrls = (selectedChampion.youtube_links || [])
+          .map(link => getYoutubeEmbedUrl(link))
+          .filter(Boolean);
+        
+        return (
+          <div className="details-overlay active" onClick={() => setSelectedChampion(null)}>
+            <div className="details-modal" onClick={e => e.stopPropagation()}>
+              <button className="details-close" onClick={() => setSelectedChampion(null)}>✕</button>
+              
+              <div className="details-body">
+                <div className="details-left">
+                  <div className="details-img-wrapper">
+                    {selectedChampion.foto ? (
+                      <img className="details-img" src={selectedChampion.foto} alt={name} />
+                    ) : (
+                      <div className="details-placeholder">🎮</div>
+                    )}
+                  </div>
+                  
+                  <div className="details-stats">
+                    <div className="details-stat-item">
+                      <span className="details-stat-label">Edad</span>
+                      <span className="details-stat-value">{selectedChampion.edad || 'No especificada'}</span>
+                    </div>
+                    <div className="details-stat-item">
+                      <span className="details-stat-label">Residencia</span>
+                      <span className="details-stat-value">{selectedChampion.localidad || 'No especificada'}</span>
+                    </div>
+                    <div className="details-stat-item">
+                      <span className="details-stat-label">Votos Positivos</span>
+                      <span className="details-stat-value" style={{ color: '#28c850' }}>👍 {selectedChampion.likes || 0}</span>
+                    </div>
+                    <div className="details-stat-item">
+                      <span className="details-stat-label">Votos Negativos</span>
+                      <span className="details-stat-value" style={{ color: 'var(--red)' }}>👎 {selectedChampion.dislikes || 0}</span>
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="details-right">
+                  <div className="details-title">
+                    <h2>{name}</h2>
+                    <div className="team">{team || 'Sin Equipo'}</div>
+                  </div>
+                  
+                  <div className="details-history">
+                    <h3>Historia del Campeón</h3>
+                    <p>{selectedChampion.historia || 'Este campeón aún no tiene una historia redactada.'}</p>
+                  </div>
+                  
+                  {embedUrls.length > 0 && (
+                    <div className="details-videos">
+                      <h3>Clips y Mejores Momentos</h3>
+                      <div className="details-video-grid">
+                        {embedUrls.map((url, idx) => (
+                          <div key={idx} className="details-video-wrapper">
+                            <iframe 
+                              src={url} 
+                              title={`Video ${idx + 1}`} 
+                              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+                              allowFullScreen
+                            />
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
 
     </main>
   );
