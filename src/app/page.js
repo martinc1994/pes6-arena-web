@@ -356,7 +356,7 @@ export default function Home() {
         </div>
 
         <div className="hero-scroll-hint">
-          <span>SCROLL</span>
+          <span>Deslizá</span>
           <div className="scroll-line"></div>
         </div>
       </section>
@@ -511,18 +511,9 @@ export default function Home() {
           <div className="inscripcion-form-wrap">
             <div className="form-card" style={{textAlign: 'center', gap: '1.5rem', background: 'var(--black2)', padding: '2rem', borderRadius: 'var(--radius-lg)'}}>
               <p style={{color: 'var(--white)', fontSize: '1.05rem', marginBottom: 0}}>
-                Inscribite directo por WhatsApp enviando un mensaje con tus datos:
+                ¿Querés participar? Seguinos en Instagram y envianos un mensaje privado o un <strong>video</strong> contando por qué tenés que estar. ¡Tendrás consideración especial!
               </p>
-              <a href="https://wa.me/5491170384230" target="_blank" className="btn-whatsapp full-w" style={{display:'inline-flex', padding:'1rem', background:'#25D366', color:'white', borderRadius:'8px', textDecoration:'none', justifyContent:'center', alignItems:'center', gap:'10px', fontWeight:'bold', width:'100%'}}>
-                Inscribirme por WhatsApp
-              </a>
-
-              <div style={{margin: '1.5rem 0', height: '1px', background: 'rgba(255,255,255,0.07)'}}></div>
-              
-              <p style={{color: 'var(--white)', fontSize: '1.05rem', marginBottom: 0}}>
-                ¿Querés destacar? Seguinos en Instagram y envianos un <strong>video</strong> contando por qué tenés que participar. ¡Tendrás consideración especial!
-              </p>
-              <a href="https://www.instagram.com/pes6arena?igsh=MTVtN3A0d2dzemJudg==" target="_blank" className="btn-instagram full-w" style={{display:'inline-flex', padding:'1rem', background:'linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%)', color:'white', borderRadius:'8px', textDecoration:'none', justifyContent:'center', alignItems:'center', gap:'10px', fontWeight:'bold', width:'100%'}}>
+              <a href="https://www.instagram.com/pes6arena" target="_blank" className="btn-instagram full-w" style={{display:'inline-flex', padding:'1rem', background:'linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%)', color:'white', borderRadius:'8px', textDecoration:'none', justifyContent:'center', alignItems:'center', gap:'10px', fontWeight:'bold', width:'100%'}}>
                 Instagram PES Arena
               </a>
             </div>
