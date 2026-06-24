@@ -1,6 +1,6 @@
 'use server'
 
-import { supabase } from '@/lib/supabase'
+import { supabaseServer as supabase } from '@/lib/supabaseServer'
 import { headers } from 'next/headers'
 
 const verifyPassword = (password) => {

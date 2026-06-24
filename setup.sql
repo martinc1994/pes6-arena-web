@@ -29,11 +29,17 @@ CREATE TABLE IF NOT EXISTS votes_log (
   created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 
--- Desactivar temporalmente RLS (Row Level Security) para permitir que la API de Next.js
--- haga las operaciones de lectura y escritura fácilmente usando la clave pública (anon key)
-ALTER TABLE clasificados DISABLE ROW LEVEL SECURITY;
-ALTER TABLE torneos DISABLE ROW LEVEL SECURITY;
-ALTER TABLE votes_log DISABLE ROW LEVEL SECURITY;
+-- Habilitar RLS (Row Level Security) para proteger las tablas de accesos no autorizados
+ALTER TABLE clasificados ENABLE ROW LEVEL SECURITY;
+ALTER TABLE torneos ENABLE ROW LEVEL SECURITY;
+ALTER TABLE votes_log ENABLE ROW LEVEL SECURITY;
+
+-- Crear políticas para permitir que la clave pública (anon) lea los datos en el frontend
+CREATE POLICY "Permitir lectura pública de clasificados" ON clasificados FOR SELECT TO anon USING (true);
+CREATE POLICY "Permitir lectura pública de torneos" ON torneos FOR SELECT TO anon USING (true);
+
+-- Las operaciones de INSERT, UPDATE y DELETE las manejará el servidor Next.js (Server Actions)
+-- utilizando la Service Role Key (clave privada que se salta el RLS).
 
 -- Insertar algunos datos iniciales de prueba (Opcional)
 INSERT INTO clasificados (nick, desc_text, likes, dislikes) VALUES 
