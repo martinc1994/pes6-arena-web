@@ -767,10 +767,10 @@ section { padding: 6rem 2rem; }
   color: #000;
 }
 .badge-influencer {
-  background: linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%);
+  background: linear-gradient(135deg, #00c6ff 0%, #0072ff 100%);
   color: #fff;
   font-weight: 900;
-  box-shadow: 0 2px 10px rgba(220, 39, 67, 0.4);
+  box-shadow: 0 2px 12px rgba(0, 198, 255, 0.45);
   animation: badgeShimmer 3s infinite ease-in-out;
 }
 @keyframes badgeShimmer {
@@ -778,24 +778,24 @@ section { padding: 6rem 2rem; }
   50% { transform: scale(1.05); }
 }
 
-/* ---- INFLUENCER CONTAINER HIGHLIGHT & ANIMATION ---- */
+/* ---- INFLUENCER CONTAINER HIGHLIGHT (ESTILO PLATINO & CYAN AZUL) ---- */
 .champion-card-influencer {
   position: relative;
-  background: linear-gradient(145deg, #1c1429 0%, #110d1c 100%);
+  background: linear-gradient(145deg, #1a2233 0%, #0f1522 100%) !important;
   border-radius: var(--radius-lg);
-  box-shadow: 0 0 20px rgba(220, 39, 67, 0.3), 0 0 10px rgba(240, 148, 51, 0.2);
+  box-shadow: 0 0 22px rgba(0, 210, 255, 0.35), 0 0 12px rgba(79, 172, 254, 0.25);
   animation: influencerPulse 4s infinite ease-in-out;
-  border: 1px solid rgba(240, 148, 51, 0.5) !important;
+  border: 1px solid rgba(0, 229, 255, 0.5) !important;
 }
 
 @keyframes influencerPulse {
   0%, 100% {
-    box-shadow: 0 0 18px rgba(220, 39, 67, 0.3), 0 0 10px rgba(240, 148, 51, 0.2);
-    border-color: rgba(220, 39, 67, 0.5) !important;
+    box-shadow: 0 0 20px rgba(0, 210, 255, 0.35), 0 0 10px rgba(79, 172, 254, 0.2);
+    border-color: rgba(0, 229, 255, 0.45) !important;
   }
   50% {
-    box-shadow: 0 0 32px rgba(220, 39, 67, 0.55), 0 0 20px rgba(240, 148, 51, 0.45);
-    border-color: rgba(240, 148, 51, 0.8) !important;
+    box-shadow: 0 0 35px rgba(0, 210, 255, 0.6), 0 0 22px rgba(79, 172, 254, 0.45);
+    border-color: rgba(0, 229, 255, 0.85) !important;
   }
 }
 
@@ -804,11 +804,11 @@ section { padding: 6rem 2rem; }
   position: absolute;
   inset: -2px;
   border-radius: calc(var(--radius-lg) + 2px);
-  background: linear-gradient(45deg, #f09433, #e6683c, #dc2743, #cc2366, #bc1888, #f09433);
+  background: linear-gradient(45deg, #00d2ff, #3a7bd5, #00f2fe, #4facfe, #00c6ff, #00d2ff);
   background-size: 300% 300%;
   z-index: -1;
   animation: gradientRotate 6s linear infinite;
-  opacity: 0.85;
+  opacity: 0.9;
 }
 
 @keyframes gradientRotate {
@@ -819,14 +819,18 @@ section { padding: 6rem 2rem; }
 
 .champion-card-influencer:hover {
   transform: translateY(-8px) scale(1.02) !important;
-  box-shadow: 0 0 40px rgba(220, 39, 67, 0.65), 0 0 25px rgba(240, 148, 51, 0.5) !important;
+  box-shadow: 0 0 45px rgba(0, 210, 255, 0.75), 0 0 25px rgba(79, 172, 254, 0.6) !important;
 }
 
 .champion-card-influencer .champion-nick {
-  background: linear-gradient(45deg, #ffffff, #ffd700, #ff8a65);
+  background: linear-gradient(45deg, #ffffff 0%, #e0f7fa 40%, #00e5ff 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
+}
+
+.champion-card-influencer .champion-desc {
+  color: #00e5ff !important;
 }
 .badge-vacant {
   background: rgba(255,255,255,0.08);
@@ -1514,12 +1518,13 @@ section { padding: 6rem 2rem; }
 }
 
 [data-theme="light"] .champion-card-influencer {
-  background: linear-gradient(145deg, #ffffff, #fff5f7);
-  box-shadow: 0 0 25px rgba(220, 39, 67, 0.2), 0 0 15px rgba(240, 148, 51, 0.15);
+  background: linear-gradient(145deg, #ffffff, #eef9ff) !important;
+  box-shadow: 0 0 25px rgba(0, 210, 255, 0.25), 0 0 15px rgba(0, 114, 255, 0.15) !important;
+  border-color: rgba(0, 198, 255, 0.5) !important;
 }
 
 [data-theme="light"] .champion-card-influencer .champion-nick {
-  background: linear-gradient(45deg, #111118, #dc2743);
+  background: linear-gradient(45deg, #0b132b, #0072ff, #00c6ff);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
