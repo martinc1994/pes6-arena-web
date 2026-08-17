@@ -1,151 +1,11 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
-import { supabase } from '@/lib/supabase';
-import confetti from 'canvas-confetti';
-import { checkAdminPassword, addClasificado, removeClasificado, updateClasificado, createTorneo, updateTorneo, removeTorneo, voteClasificado } from './actions';
+import { useEffect, useRef } from 'react';
+import Link from 'next/link';
 
 export default function Home() {
   const canvasRef = useRef(null);
-  const [toastMsg, setToastMsg] = useState(null);
-  
-  // Datos
-  const [clasificados, setClasificados] = useState([]);
-  const [torneos, setTorneos] = useState([]);
-  
-  // Formulario Inscripción
-  const [modalidad, setModalidad] = useState('individual');
-  const [showFormSuccess, setShowFormSuccess] = useState(false);
 
-  // Admin Panel
-  const [showAdmin, setShowAdmin] = useState(false);
-  const [adminLoggedIn, setAdminLoggedIn] = useState(false);
-  const [adminPass, setAdminPass] = useState('');
-  const [adminError, setAdminError] = useState('');
-  const [adminTab, setAdminTab] = useState('clasificados');
-  
-  // Admin Form - Clasificados
-  const [cNick, setCNick] = useState('');
-  const [cImgFile, setCImgFile] = useState(null);
-  const [uploading, setUploading] = useState(false);
-  const [cDesc, setCDesc] = useState('');
-  
-  // Admin Form Extra - Clasificados
-  const [cEquipo, setCEquipo] = useState('');
-  const [cEdad, setCEdad] = useState('');
-  const [cLocalidad, setCLocalidad] = useState('');
-  const [cHistoria, setCHistoria] = useState('');
-  const [cYoutube1, setCYoutube1] = useState('');
-  const [cYoutube2, setCYoutube2] = useState('');
-  const [cYoutube3, setCYoutube3] = useState('');
-  const [editMode, setEditMode] = useState(false);
-  const [editingId, setEditingId] = useState(null);
-
-  // Detail Modal
-  const [selectedChampion, setSelectedChampion] = useState(null);
-  
-  // Admin Form - Torneos
-  const [tNombre, setTNombre] = useState('');
-  const [tFecha, setTFecha] = useState('');
-  const [tModalidad, setTModalidad] = useState('individual');
-  
-  // Bracket Modal
-  const [showBracket, setShowBracket] = useState(false);
-  const [currentTorneo, setCurrentTorneo] = useState(null);
-
-  const showToast = (msg, type = 'success') => {
-    setToastMsg({ msg, type });
-    setTimeout(() => setToastMsg(null), 2800);
-  };
-
-  const getYoutubeEmbedUrl = (url) => {
-    if (!url) return null;
-    let videoId = null;
-    try {
-      const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=|shorts\/)([^#\&\?]*).*/;
-      const match = url.match(regExp);
-      if (match && match[2].length === 11) {
-        videoId = match[2];
-      }
-    } catch (e) {
-      console.error("Error parsing youtube url", e);
-    }
-    return videoId ? `https://www.youtube.com/embed/${videoId}` : null;
-  };
-
-  const getNickAndEquipo = (c) => {
-    if (c.equipo) {
-      return { name: c.nick, team: c.equipo };
-    }
-    if (c.nick && c.nick.includes(' - ')) {
-      const parts = c.nick.split(' - ');
-      return { name: parts[0], team: parts[1] };
-    }
-    return { name: c.nick || '', team: '' };
-  };
-
-  const startEdit = (c) => {
-    setEditMode(true);
-    setEditingId(c.id);
-    setCNick(c.nick || '');
-    setCDesc(c.desc_text || '');
-    setCEquipo(c.equipo || '');
-    setCEdad(c.edad || '');
-    setCLocalidad(c.localidad || '');
-    setCHistoria(c.historia || '');
-    setCYoutube1(c.youtube_links?.[0] || '');
-    setCYoutube2(c.youtube_links?.[1] || '');
-    setCYoutube3(c.youtube_links?.[2] || '');
-    setAdminTab('clasificados');
-  };
-
-  const cancelEdit = () => {
-    setEditMode(false);
-    setEditingId(null);
-    setCNick('');
-    setCDesc('');
-    setCEquipo('');
-    setCEdad('');
-    setCLocalidad('');
-    setCHistoria('');
-    setCYoutube1('');
-    setCYoutube2('');
-    setCYoutube3('');
-    if (document.getElementById('fileInputFoto')) {
-      document.getElementById('fileInputFoto').value = '';
-    }
-    setCImgFile(null);
-  };
-
-  const fetchDatos = async () => {
-    const { data: clas } = await supabase.from('clasificados').select('*').order('id', { ascending: true });
-    if (clas) setClasificados(clas);
-    
-    const { data: torn } = await supabase.from('torneos').select('*').order('id', { ascending: false });
-    if (torn) setTorneos(torn);
-  };
-
-  useEffect(() => {
-    // eslint-disable-next-line
-    fetchDatos();
-  }, []);
-
-  // Votación
-  const handleVote = async (id, type) => {
-    try {
-      const res = await voteClasificado(id, type);
-      if (res && res.error) {
-        showToast(res.error, 'warning');
-        return;
-      }
-      showToast(type === 'like' ? '👍 Voto positivo registrado!' : '👎 Voto negativo registrado!', 'success');
-      fetchDatos();
-    } catch (e) {
-      showToast('Ocurrió un error al votar.', 'warning');
-    }
-  };
-
-  // Canvas y scroll
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -160,7 +20,7 @@ export default function Home() {
 
     const particles = [];
     const COLORS = ['#FFD700', '#E8003D', '#ffffff'];
-    for (let i = 0; i < 28; i++) {
+    for (let i = 0; i < 35; i++) {
       particles.push({
         x: Math.random() * canvas.width,
         y: Math.random() * canvas.height,
@@ -180,16 +40,10 @@ export default function Home() {
         p.y += p.vy;
         if (p.x < 0 || p.x > canvas.width) p.vx *= -1;
         if (p.y < 0 || p.y > canvas.height) p.vy *= -1;
-
         ctx.beginPath();
         ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
-        
-        if (p.color.startsWith('#')) {
-          ctx.globalAlpha = p.alpha;
-          ctx.fillStyle = p.color;
-        } else {
-          ctx.fillStyle = p.color.replace(')', `,${p.alpha})`).replace('rgb', 'rgba').replace('#', '');
-        }
+        ctx.globalAlpha = p.alpha;
+        ctx.fillStyle = p.color;
         ctx.fill();
         ctx.globalAlpha = 1;
       });
@@ -197,682 +51,93 @@ export default function Home() {
     }
     loop();
 
-    const handleScroll = () => {
-      document.getElementById('navbar')?.classList.toggle('scrolled', window.scrollY > 60);
-    };
-    window.addEventListener('scroll', handleScroll);
-
-    const fadeEls = document.querySelectorAll('.step-card, .formato-box, .evento-features li, .champion-card');
-    const observer = new IntersectionObserver((entries) => {
-      entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); });
-    }, { threshold: 0.1 });
-    fadeEls.forEach(el => { el.classList.add('fade-in'); observer.observe(el); });
-
     return () => {
       window.removeEventListener('resize', resize);
-      window.removeEventListener('scroll', handleScroll);
       cancelAnimationFrame(animationId);
-      observer.disconnect();
     };
   }, []);
 
-  const handleAdminLogin = async () => {
-    const valid = await checkAdminPassword(adminPass);
-    if (valid) {
-      setAdminLoggedIn(true);
-    } else {
-      setAdminError('Contraseña incorrecta');
-      setTimeout(() => setAdminError(''), 2000);
-    }
-  };
-
-  const generarBracket = () => {
-    return [
-      { nombre: 'Octavos de final', partidos: Array(8).fill(null).map((_, i) => ({ id: i, local: '', visitante: '', golesLocal: '', golesVisitante: '', ganador: '' })) },
-      { nombre: 'Cuartos de final', partidos: Array(4).fill(null).map((_, i) => ({ id: i, local: '', visitante: '', golesLocal: '', golesVisitante: '', ganador: '' })) },
-      { nombre: 'Semifinales', partidos: Array(2).fill(null).map((_, i) => ({ id: i, local: '', visitante: '', golesLocal: '', golesVisitante: '', ganador: '' })) },
-      { nombre: 'Final', partidos: [{ id: 0, local: '', visitante: '', golesLocal: '', golesVisitante: '', ganador: '' }] },
-    ];
-  };
-
-  const propagateWinner = async (nt, rIdx, pIdx) => {
-    const p = nt.partidos[rIdx].partidos[pIdx];
-    const nextRIdx = rIdx + 1;
-    
-    if (nextRIdx < nt.partidos.length) {
-      const nextPIdx = Math.floor(pIdx / 2);
-      const isLocalNext = pIdx % 2 === 0;
-      if (isLocalNext) {
-        nt.partidos[nextRIdx].partidos[nextPIdx].local = p.ganador || '';
-      } else {
-        nt.partidos[nextRIdx].partidos[nextPIdx].visitante = p.ganador || '';
-      }
-      
-      // Auto-cascade if we unset a winner? We leave that simple for now.
-    } else {
-      if (p.ganador) {
-        confetti({ particleCount: 200, spread: 80, origin: { y: 0.6 } });
-      }
-    }
-    setCurrentTorneo(nt);
-    await updateTorneo(adminPass, nt.id, { partidos: nt.partidos });
-    fetchDatos();
-  };
-
-  const updateScore = async (rIdx, pIdx, isLocal, val) => {
-    const nt = {...currentTorneo};
-    nt.partidos = JSON.parse(JSON.stringify(nt.partidos));
-    const p = nt.partidos[rIdx].partidos[pIdx];
-    
-    if (isLocal) p.golesLocal = val;
-    else p.golesVisitante = val;
-
-    if (p.golesLocal !== '' && p.golesVisitante !== '') {
-      const gl = parseInt(p.golesLocal);
-      const gv = parseInt(p.golesVisitante);
-      if (gl > gv) p.ganador = p.local;
-      else if (gv > gl) p.ganador = p.visitante;
-      else p.ganador = ''; // Tie, wait for manual select
-    } else {
-      p.ganador = '';
-    }
-    
-    await propagateWinner(nt, rIdx, pIdx);
-  };
-
-  const setManualWinner = async (rIdx, pIdx, winnerName) => {
-    const nt = {...currentTorneo};
-    nt.partidos = JSON.parse(JSON.stringify(nt.partidos));
-    nt.partidos[rIdx].partidos[pIdx].ganador = winnerName;
-    await propagateWinner(nt, rIdx, pIdx);
-  };
-
   return (
-    <main>
-      <nav className="navbar" id="navbar">
-        <div className="nav-inner">
-          <div className="nav-logo">
-            <span className="logo-vf">VF</span>
-            <span className="logo-cup">PES6</span>
-          </div>
-          <ul className="nav-links">
-            <li><a href="#clasificados">Clasificados</a></li>
-            <li><a href="#evento">Evento Final</a></li>
-            <li><a href="#torneos">Microtorneos</a></li>
-          </ul>
-          <a href="#inscripcion" className="nav-cta">QUIERO JUGAR</a>
+    <main className="portada">
+      <canvas className="pitch-canvas" ref={canvasRef}></canvas>
+      <div className="hero-overlay"></div>
+
+      <div className="portada-content">
+        <div className="hero-eyebrow">
+          <span className="dot red"></span>
+          <span>20 años después, el PES6 más vivo que nunca</span>
+          <span className="dot red"></span>
         </div>
-      </nav>
 
-      <section className="hero" id="inicio">
-        <canvas className="pitch-canvas" id="pitchCanvas" ref={canvasRef}></canvas>
-        <div className="hero-overlay"></div>
+        <h1 className="hero-title">
+          <span className="line-top">VALEN</span>
+          <span className="line-fulvo">FULVO</span>
+          <span className="line-cup">PES ARENA</span>
+        </h1>
 
-        <div className="hero-content">
-          <div className="hero-eyebrow">
-            <span className="dot red"></span>
-            <span>20 años despues, el pes6 mas vivo que nunca</span>
-            <span className="dot red"></span>
-          </div>
-
-          <h1 className="hero-title">
-            <span className="line-top">VALEN</span>
-            <span className="line-fulvo">FULVO</span>
-            <span className="line-cup">PES ARENA</span>
-          </h1>
-
-          <div className="hero-event-box">
-            <div className="event-date-block">
-              <span className="event-day">21</span>
-              <div className="event-detail">
-                <span className="event-month">NOVIEMBRE</span>
-                <span className="event-year">2026</span>
-              </div>
-            </div>
-            <div className="event-divider"></div>
-            <div className="event-place-block">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
-              <div>
-                <span className="event-place">MICROESTADIO</span>
-                <span className="event-city">Garín, Buenos Aires</span>
-              </div>
+        <div className="hero-event-box">
+          <div className="event-date-block">
+            <span className="event-day">21</span>
+            <div className="event-detail">
+              <span className="event-month">NOVIEMBRE</span>
+              <span className="event-year">2026</span>
             </div>
           </div>
-
-          <p className="hero-sub">El evento más grande de PES6.<br />16 campeones, un solo trono.</p>
-
-          <div className="hero-btns">
-            <a href="#inscripcion" className="btn-primary">QUIERO CLASIFICAR</a>
-            <a href="#clasificados" className="btn-ghost">VER CLASIFICADOS</a>
-          </div>
-
-          <div className="hero-stats">
-            <div className="stat"><span className="stat-n">16</span><span className="stat-l">Equipos Clasificados</span></div>
-            <div className="stat-sep"></div>
-            <div className="stat"><span className="stat-n">~3</span><span className="stat-l">Semanas entre torneos</span></div>
-            <div className="stat-sep"></div>
-            <div className="stat"><span className="stat-n">1</span><span className="stat-l">Gran Final</span></div>
-          </div>
-        </div>
-
-        <div className="hero-scroll-hint">
-          <span>Deslizá</span>
-          <div className="scroll-line"></div>
-        </div>
-      </section>
-
-      <section className="section-clasificados" id="clasificados">
-        <div className="section-label">
-          <span className="label-line"></span>
-          <span className="label-text">CLASIFICADOS</span>
-          <span className="label-line"></span>
-        </div>
-        <h2 className="section-title centered">Los que ya<br /><em>están adentro</em></h2>
-        <p className="section-sub centered">Estos campeones de microtorneos ya tienen su lugar en el Microestadio. Votá a tu favorito para la Gran Final.</p>
-
-        <div className="voting-notice">
-          <span>⚡</span>
-          <span>Votación activa — 2 votos por dispositivo cada 24 horas</span>
-        </div>
-
-        <div className="clasificados-grid">
-          {clasificados.map(c => {
-            const { name, team } = getNickAndEquipo(c);
-            return (
-              <div key={c.id} className="champion-card fade-in visible" onClick={() => setSelectedChampion(c)} style={{ cursor: 'pointer' }}>
-                <div className="champion-badge">CLASIFICADO</div>
-                {c.foto ? (
-                  <img className="champion-photo" src={c.foto} alt={name} onError={(e)=>{e.target.style.display='none'; e.target.nextSibling.style.display='flex'}} />
-                ) : null}
-                <div className="champion-photo-placeholder" style={{display: c.foto ? 'none' : 'flex'}}>🎮</div>
-                
-                <div className="champion-info">
-                  <div className="champion-nick">{name}</div>
-                  <div className="champion-desc" style={{ color: 'var(--gold)', textTransform: 'uppercase', fontWeight: 600, letterSpacing: '1.5px', fontSize: '0.8rem', marginTop: '0.2rem' }}>{team || 'Sin Equipo'}</div>
-                  <div className="vote-btns" style={{ marginTop: '0.75rem' }}>
-                    <button className="vote-btn like" onClick={(e) => { e.stopPropagation(); handleVote(c.id, 'like'); }}>
-                      👍 <span>{c.likes || 0}</span>
-                    </button>
-                    <button className="vote-btn dislike" onClick={(e) => { e.stopPropagation(); handleVote(c.id, 'dislike'); }}>
-                      👎 <span>{c.dislikes || 0}</span>
-                    </button>
-                  </div>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-
-        {16 - clasificados.length > 0 && (
-          <p className="clasificados-pending" style={{marginTop:'2rem', textAlign:'center', color:'var(--grey)'}}>
-            {16 - clasificados.length} lugares aún sin clasificado — los próximos torneos lo definirán.
-          </p>
-        )}
-      </section>
-
-      <section className="section-evento" id="evento">
-        <div className="section-label">
-          <span className="label-line"></span>
-          <span className="label-text">EL EVENTO</span>
-          <span className="label-line"></span>
-        </div>
-        <div className="evento-container">
-          <div className="evento-visual">
-            <div className="stadium-img-wrapper">
-              <img src="/recursos/microestadiointerior.jpeg" alt="Microestadio Garín" className="stadium-img" />
-              <div className="stadium-badge">
-                <span className="badge-date">21 NOV</span>
-              </div>
-            </div>
-          </div>
-          <div className="evento-info">
-            <h2 className="section-title">La Gran Final<br /><em>te espera</em></h2>
-            <p className="evento-desc">
-              Después de meses de torneos clasificatorios, los 16 mejores se enfrentan en un microestadio real. Tribunas, pantallas gigantes, transmisión en vivo. El PES6 como nunca lo viste.
-            </p>
-            <ul className="evento-features">
-              <li>
-                <span className="feat-icon">🏆</span>
-                <div><strong>Formato eliminatorio directo</strong><br />16 clasificados. Sin segunda oportunidad.</div>
-              </li>
-              <li>
-                <span className="feat-icon">📍</span>
-                <div><strong>Microestadio de Garín</strong><br />Ciudad de Garín, Buenos Aires, Argentina</div>
-              </li>
-              <li>
-                <span className="feat-icon">🎮</span>
-                <div><strong>PES6 Oficial</strong><br />El clásico que sigue vivo gracias a la comunidad</div>
-              </li>
-              <li>
-                <span className="feat-icon">🎙️</span>
-                <div><strong>Animado y relatado por</strong><br />ValenFulvo y amigos</div>
-              </li>
-            </ul>
-            <a href="#inscripcion" className="btn-primary">QUIERO ESTAR AHÍ</a>
-          </div>
-        </div>
-      </section>
-
-      <section className="section-torneos" id="torneos">
-        <div className="section-label">
-          <span className="label-line"></span>
-          <span className="label-text">MICROTORNEOS</span>
-          <span className="label-line"></span>
-        </div>
-
-        <h2 className="section-title centered">Así se llega<br /><em>a la final</em></h2>
-        <p className="section-sub centered">Cada ~2 semanas se realiza un microtorneo clasificatorio. 16 equipos. Eliminación directa. Solo el campeón avanza al evento del microestadio.</p>
-
-        <div className="steps-grid">
-          <div className="step-card">
-            <div className="step-num">01</div>
-            <div className="step-icon">📝</div>
-            <h3>Inscribite</h3>
-            <p>Contactanos por nuestras redes sociales, las encontrarás más abajo de la web. Cuenta porque mereces un lugar en los torneos.</p>
-          </div>
-          <div className="step-card">
-            <div className="step-num">02</div>
-            <div className="step-icon">⚽</div>
-            <h3>Competí</h3>
-            <p>El día del torneo, 16 equipos se enfrentan en rondas eliminatorias a partido único. No hay repechaje, no hay vuelta. O ganás o te vas.</p>
-          </div>
-          <div className="step-card">
-            <div className="step-num">03</div>
-            <div className="step-icon">🥇</div>
-            <h3>Clasificá</h3>
-            <p>El campeón de cada microtorneo gana su lugar en la Gran Final del 21 de Noviembre en el Microestadio de Garín.</p>
-          </div>
-          <div className="step-card">
-            <div className="step-num">04</div>
-            <div className="step-icon">👑</div>
-            <h3>Hacete leyenda</h3>
-            <p>En la Gran Final, los 16 campeones luchan por el título máximo. Tribunas llenas, transmisión en vivo, historia para siempre.</p>
-          </div>
-        </div>
-      </section>
-
-      <section className="section-inscripcion" id="inscripcion">
-        <div className="section-label">
-          <span className="label-line"></span>
-          <span className="label-text">INSCRIPCIÓN</span>
-          <span className="label-line"></span>
-        </div>
-        <div className="inscripcion-container">
-          <div className="inscripcion-info">
-            <h2 className="section-title">¿Listo para<br /><em>competir?</em></h2>
-            <p>Contactate por nuestras vías oficiales para inscribirte en el próximo torneo disponible. Las plazas son limitadas.</p>
-            <div className="inscripcion-tips">
-              <div className="tip"><span style={{color:'var(--gold)', fontWeight:'bold'}}>✓</span> Revisá tu disponibilidad para la fecha del torneo</div>
-              <div className="tip"><span style={{color:'var(--gold)', fontWeight:'bold'}}>✓</span> Si es pareja, coordiná con tu compañero antes de inscribirte</div>
-              <div className="tip"><span style={{color:'var(--gold)', fontWeight:'bold'}}>✓</span> Seguí a ValenFulvo para no perderte las novedades</div>
-            </div>
-          </div>
-
-          <div className="inscripcion-form-wrap">
-            <div className="form-card" style={{textAlign: 'center', gap: '1.5rem', background: 'var(--black2)', padding: '2rem', borderRadius: 'var(--radius-lg)'}}>
-              <p style={{color: 'var(--white)', fontSize: '1.05rem', marginBottom: 0}}>
-                ¿Querés participar? Seguinos en Instagram y envianos un mensaje privado o un <strong>video</strong> contando por qué tenés que estar. ¡Tendrás consideración especial!
-              </p>
-              <a href="https://www.instagram.com/pes6arena" target="_blank" className="btn-instagram full-w" style={{display:'inline-flex', padding:'1rem', background:'linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%)', color:'white', borderRadius:'8px', textDecoration:'none', justifyContent:'center', alignItems:'center', gap:'10px', fontWeight:'bold', width:'100%'}}>
-                Instagram PES Arena
-              </a>
+          <div className="event-divider"></div>
+          <div className="event-place-block">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+            <div>
+              <span className="event-place">MICROESTADIO</span>
+              <span className="event-city">Garín, Buenos Aires</span>
             </div>
           </div>
         </div>
-      </section>
 
-      <footer className="footer" style={{background:'var(--black2)', padding:'3rem 2rem', textAlign:'center', borderTop:'1px solid rgba(255,255,255,0.05)'}}>
-        <div className="footer-logo" style={{justifyContent:'center', marginBottom:'1rem'}}>
-          <span className="logo-vf" style={{color:'var(--gold)', fontFamily:"'Bebas Neue', sans-serif", fontSize:'1.8rem'}}>VF</span>
-          <span className="logo-cup" style={{color:'var(--red)', fontFamily:"'Bebas Neue', sans-serif", fontSize:'1.2rem', marginLeft:'5px'}}>PES6</span>
+        <p className="hero-sub">El evento más grande de PES6.<br />16 participantes, un solo trono.</p>
+
+        <div className="portada-buttons">
+          <Link href="/evento" className="portada-btn">
+            <div className="portada-btn-icon">🏟️</div>
+            <div className="portada-btn-text">
+              <span className="portada-btn-title">INFO DEL EVENTO</span>
+              <span className="portada-btn-desc">Conocé todo sobre el PESARENA</span>
+            </div>
+            <div className="portada-btn-arrow">→</div>
+          </Link>
+
+          <Link href="/participantes" className="portada-btn">
+            <div className="portada-btn-icon">🎮</div>
+            <div className="portada-btn-text">
+              <span className="portada-btn-title">CONOCÉ A LOS PARTICIPANTES</span>
+              <span className="portada-btn-desc">Votá y descubrí quiénes compiten</span>
+            </div>
+            <div className="portada-btn-arrow">→</div>
+          </Link>
+
+          <Link href="/clasificar" className="portada-btn">
+            <div className="portada-btn-icon">🏆</div>
+            <div className="portada-btn-text">
+              <span className="portada-btn-title">QUIERO CLASIFICAR</span>
+              <span className="portada-btn-desc">Anotate como jugador o influencer</span>
+            </div>
+            <div className="portada-btn-arrow">→</div>
+          </Link>
         </div>
-        <p style={{color:'var(--grey)', fontSize:'0.9rem', marginBottom:'1.5rem'}}>El PES6 más grande de Argentina</p>
-        <div style={{display:'flex', gap:'1rem', justifyContent:'center', marginBottom:'1.5rem', flexWrap:'wrap'}}>
-          <a href="#inicio" style={{color:'var(--grey)', textDecoration:'none', fontSize:'0.85rem'}}>Inicio</a>
-          <a href="#evento" style={{color:'var(--grey)', textDecoration:'none', fontSize:'0.85rem'}}>Evento</a>
-          <a href="#torneos" style={{color:'var(--grey)', textDecoration:'none', fontSize:'0.85rem'}}>Torneos</a>
-          <a href="#clasificados" style={{color:'var(--grey)', textDecoration:'none', fontSize:'0.85rem'}}>Clasificados</a>
+
+        <div className="hero-stats">
+          <div className="stat"><span className="stat-n">16</span><span className="stat-l">Participantes</span></div>
+          <div className="stat-sep"></div>
+          <div className="stat"><span className="stat-n">1</span><span className="stat-l">Gran Final</span></div>
+          <div className="stat-sep"></div>
+          <div className="stat"><span className="stat-n">🔥</span><span className="stat-l">Experiencia Única</span></div>
         </div>
-        <div style={{marginTop: '2rem', borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: '1.5rem'}}>
-          <a href="https://wa.me/543816232650?text=Hola%20Mart%C3%ADn!%20Vi%20tu%20trabajo%20en%20la%20p%C3%A1gina%20de%20ValenFulvo%20y%20me%20gustar%C3%ADa%20consultar%20por%20tus%20servicios%20de%20desarrollo." target="_blank" rel="noopener noreferrer" style={{color: 'var(--grey)', textDecoration: 'none', fontSize: '0.85rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', transition: 'color 0.2s'}}>
-            Desarrollado por <span style={{color: 'var(--gold)', fontWeight: 'bold'}}>Martín Castillo</span>
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/></svg>
+
+        <div className="portada-footer-inner">
+          <a href="https://wa.me/543816232650?text=Hola%20Mart%C3%ADn!%20Vi%20tu%20trabajo%20en%20la%20p%C3%A1gina%20de%20ValenFulvo%20y%20me%20gustar%C3%ADa%20consultar%20por%20tus%20servicios%20de%20desarrollo." target="_blank" rel="noopener noreferrer" className="portada-credit">
+            Desarrollado por <span>Martín Castillo</span>
           </a>
-          <div style={{marginTop: '1.5rem'}}>
-            <button onClick={() => setShowAdmin(true)} style={{background:'transparent', border:'none', color:'rgba(255,255,255,0.1)', fontSize:'0.7rem', cursor:'pointer', letterSpacing:'1px', textTransform:'uppercase'}}>MODULO ADMIN</button>
-          </div>
-        </div>
-      </footer>
-
-      {/* Toast Notification */}
-      {toastMsg && (
-        <div style={{
-          position:'fixed', bottom:'5rem', left:'50%', transform:'translateX(-50%)',
-          background: toastMsg.type === 'warning' ? '#9e0029' : '#0d2a18',
-          border: `1px solid ${toastMsg.type === 'warning' ? '#E8003D' : '#28c850'}`,
-          color:'#fff', padding:'0.75rem 1.5rem', borderRadius:'8px', zIndex:999, fontWeight:600
-        }}>
-          {toastMsg.msg}
-        </div>
-      )}
-
-      {/* Admin FAB removed */}
-
-      {/* Admin Overlay */}
-      <div className={`admin-overlay ${showAdmin ? 'active' : ''}`} onClick={(e) => { if(e.target.className.includes('admin-overlay')) setShowAdmin(false) }}>
-        <div className="admin-panel" onClick={(e) => e.stopPropagation()}>
-          <div className="admin-header">
-            <h2>Panel Administrador</h2>
-            <button className="admin-close" onClick={() => setShowAdmin(false)}>✕</button>
-          </div>
-
-          {!adminLoggedIn ? (
-            <div className="admin-login">
-              <p>Acceso restringido</p>
-              <input type="password" value={adminPass} onChange={e=>setAdminPass(e.target.value)} placeholder="Contraseña" style={{background:'rgba(255,255,255,0.05)', color:'white', border:'1px solid rgba(255,255,255,0.1)', padding:'0.75rem', borderRadius:'8px'}} />
-              <button className="btn-primary" onClick={handleAdminLogin} style={{padding:'0.75rem', border:'none', background:'var(--gold)', fontWeight:'bold', borderRadius:'8px', cursor:'pointer'}}>INGRESAR</button>
-              {adminError && <p style={{color:'var(--red)'}}>{adminError}</p>}
-            </div>
-          ) : (
-            <div className="admin-content">
-              <div className="admin-tabs" style={{display:'flex', gap:'10px', marginBottom:'20px'}}>
-                <button className={`atab ${adminTab==='clasificados'?'active':''}`} onClick={()=>setAdminTab('clasificados')} style={{background:'none', border:'none', color:adminTab==='clasificados'?'var(--gold)':'var(--grey)', padding:'10px', cursor:'pointer', borderBottom:adminTab==='clasificados'?'2px solid var(--gold)':'none', fontWeight:'bold'}}>Clasificados</button>
-                <button className={`atab ${adminTab==='torneos'?'active':''}`} onClick={()=>setAdminTab('torneos')} style={{background:'none', border:'none', color:adminTab==='torneos'?'var(--gold)':'var(--grey)', padding:'10px', cursor:'pointer', borderBottom:adminTab==='torneos'?'2px solid var(--gold)':'none', fontWeight:'bold'}}>Microtorneos</button>
-              </div>
-
-              {adminTab === 'clasificados' && (
-                <div>
-                  <div style={{background:'rgba(255,255,255,0.05)', padding:'15px', borderRadius:'8px', marginBottom:'20px', display:'flex', flexDirection:'column', gap:'12px'}}>
-                    <div style={{fontSize:'0.8rem', fontWeight:'bold', color:'var(--gold)', letterSpacing:'1px', textTransform:'uppercase'}}>
-                      {editMode ? 'Editar Campeón' : 'Agregar Nuevo Campeón'}
-                    </div>
-                    
-                    <input type="text" placeholder="Nick / Nombre" value={cNick} onChange={e=>setCNick(e.target.value)} style={{padding:'8px', background:'rgba(255,255,255,0.05)', border:'1px solid rgba(255,255,255,0.1)', color:'white'}} />
-                    <input type="text" placeholder="Equipo (ej: ARSENAL)" value={cEquipo} onChange={e=>setCEquipo(e.target.value)} style={{padding:'8px', background:'rgba(255,255,255,0.05)', border:'1px solid rgba(255,255,255,0.1)', color:'white'}} />
-                    
-                    <div style={{display:'flex', gap:'10px'}}>
-                      <input type="text" placeholder="Edad (ej: 25 años)" value={cEdad} onChange={e=>setCEdad(e.target.value)} style={{padding:'8px', flex:1, background:'rgba(255,255,255,0.05)', border:'1px solid rgba(255,255,255,0.1)', color:'white'}} />
-                      <input type="text" placeholder="Localidad (ej: Buenos Aires)" value={cLocalidad} onChange={e=>setCLocalidad(e.target.value)} style={{padding:'8px', flex:1, background:'rgba(255,255,255,0.05)', border:'1px solid rgba(255,255,255,0.1)', color:'white'}} />
-                    </div>
-
-                    <textarea placeholder="Historia / Descripción detallada" value={cHistoria} onChange={e=>setCHistoria(e.target.value)} rows={3} style={{padding:'8px', background:'rgba(255,255,255,0.05)', border:'1px solid rgba(255,255,255,0.1)', color:'white', resize:'vertical', fontFamily:'inherit'}} />
-                    
-                    <div style={{border:'1px solid rgba(255,255,255,0.05)', padding:'10px', borderRadius:'6px', display:'flex', flexDirection:'column', gap:'8px'}}>
-                      <span style={{fontSize:'0.75rem', color:'var(--grey)', fontWeight:'bold'}}>Videos de YouTube (Hasta 3 links)</span>
-                      <input type="text" placeholder="Link de YouTube 1" value={cYoutube1} onChange={e=>setCYoutube1(e.target.value)} style={{padding:'6px', fontSize:'0.85rem', background:'rgba(255,255,255,0.05)', border:'1px solid rgba(255,255,255,0.1)', color:'white'}} />
-                      <input type="text" placeholder="Link de YouTube 2" value={cYoutube2} onChange={e=>setCYoutube2(e.target.value)} style={{padding:'6px', fontSize:'0.85rem', background:'rgba(255,255,255,0.05)', border:'1px solid rgba(255,255,255,0.1)', color:'white'}} />
-                      <input type="text" placeholder="Link de YouTube 3" value={cYoutube3} onChange={e=>setCYoutube3(e.target.value)} style={{padding:'6px', fontSize:'0.85rem', background:'rgba(255,255,255,0.05)', border:'1px solid rgba(255,255,255,0.1)', color:'white'}} />
-                    </div>
-
-                    <div style={{display:'flex', flexDirection:'column', gap:'5px'}}>
-                      <label style={{fontSize:'0.7rem', color:'var(--grey)'}}>Foto del Campeón {editMode && '(dejar en blanco para mantener la actual)'}</label>
-                      <input type="file" id="fileInputFoto" accept="image/*" onChange={e=>{ if(e.target.files && e.target.files[0]) setCImgFile(e.target.files[0]) }} style={{padding:'8px', background:'rgba(255,255,255,0.05)', border:'1px solid rgba(255,255,255,0.1)', color:'white'}} />
-                    </div>
-
-                    <input type="text" placeholder="Detalle rápido / Badge (ej: Campeón Torneo #3)" value={cDesc} onChange={e=>setCDesc(e.target.value)} style={{padding:'8px', background:'rgba(255,255,255,0.05)', border:'1px solid rgba(255,255,255,0.1)', color:'white'}} />
-                    
-                    <button className="btn-primary" disabled={uploading} style={{padding:'10px', background: uploading ? 'var(--grey)' : 'var(--gold)', border:'none', fontWeight:'bold', borderRadius:'5px', marginTop:'5px'}} onClick={async () => {
-                      if (!cNick) return showToast('El Nick es obligatorio', 'warning');
-                      try {
-                        setUploading(true);
-                        let fotoUrl = editMode ? (clasificados.find(x => x.id === editingId)?.foto || '') : '';
-                        if (cImgFile) {
-                          const fileExt = cImgFile.name.split('.').pop();
-                          const fileName = `${Date.now()}.${fileExt}`;
-                          const { data, error } = await supabase.storage.from('campeones').upload(fileName, cImgFile);
-                          if (error) throw new Error('Error al subir imagen a Supabase');
-                          const { data: { publicUrl } } = supabase.storage.from('campeones').getPublicUrl(fileName);
-                          fotoUrl = publicUrl;
-                        }
-
-                        const youtube_links = [cYoutube1, cYoutube2, cYoutube3].filter(Boolean);
-
-                        if (editMode) {
-                          const res = await updateClasificado(adminPass, editingId, {
-                            nick: cNick,
-                            foto: fotoUrl,
-                            desc_text: cDesc,
-                            equipo: cEquipo,
-                            edad: cEdad,
-                            localidad: cLocalidad,
-                            historia: cHistoria,
-                            youtube_links
-                          });
-                          if(res && res.error) { showToast(res.error, 'warning'); setUploading(false); return; }
-                          showToast('Clasificado actualizado');
-                        } else {
-                          const res = await addClasificado(adminPass, cNick, fotoUrl, cDesc, cEquipo, cEdad, cLocalidad, cHistoria, youtube_links);
-                          if(res && res.error) { showToast(res.error, 'warning'); setUploading(false); return; }
-                          showToast('Clasificado agregado');
-                        }
-                        
-                        cancelEdit();
-                        fetchDatos();
-                      } catch (e) { showToast(e.message || 'Error al guardar', 'warning'); } finally { setUploading(false); }
-                    }}>{uploading ? 'GUARDANDO...' : (editMode ? 'GUARDAR CAMBIOS' : 'AGREGAR CLASIFICADO')}</button>
-                    
-                    {editMode && (
-                      <button className="btn-ghost" style={{padding:'8px', border:'1px solid rgba(255,255,255,0.2)', color:'white', borderRadius:'5px', fontWeight:'bold'}} onClick={cancelEdit}>CANCELAR EDICIÓN</button>
-                    )}
-                  </div>
-                  
-                  <div style={{display:'flex', flexDirection:'column', gap:'10px'}}>
-                    {clasificados.map(c => {
-                      const { name, team } = getNickAndEquipo(c);
-                      return (
-                        <div key={c.id} style={{display:'flex', justifyContent:'space-between', alignItems:'center', background:'rgba(255,255,255,0.05)', padding:'10px', borderRadius:'8px'}}>
-                          <div>
-                            <div style={{fontWeight:'bold'}}>{name}</div>
-                            <div style={{fontSize:'0.8rem', color:'var(--gold)'}}>{team || 'Sin Equipo'}</div>
-                          </div>
-                          <div style={{display:'flex', gap:'8px'}}>
-                            <button style={{background:'rgba(255,215,0,0.15)', border:'1px solid var(--gold)', color:'var(--gold)', padding:'5px 10px', borderRadius:'5px', cursor:'pointer'}} onClick={() => startEdit(c)}>✏️</button>
-                            <button style={{background:'rgba(232,0,61,0.2)', border:'1px solid var(--red)', color:'var(--red)', padding:'5px 10px', borderRadius:'5px', cursor:'pointer'}} onClick={async () => {
-                              if(confirm('¿Eliminar?')) {
-                                await removeClasificado(adminPass, c.id);
-                                fetchDatos();
-                              }
-                            }}>✕</button>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
-
-              {adminTab === 'torneos' && (
-                <div>
-                  <div style={{background:'rgba(255,255,255,0.05)', padding:'15px', borderRadius:'8px', marginBottom:'20px', display:'flex', flexDirection:'column', gap:'10px'}}>
-                    <input type="text" placeholder="Nombre (ej: Microtorneo #4)" value={tNombre} onChange={e=>setTNombre(e.target.value)} style={{padding:'8px', background:'rgba(255,255,255,0.05)', border:'1px solid rgba(255,255,255,0.1)', color:'white'}} />
-                    <input type="text" placeholder="Fecha" value={tFecha} onChange={e=>setTFecha(e.target.value)} style={{padding:'8px', background:'rgba(255,255,255,0.05)', border:'1px solid rgba(255,255,255,0.1)', color:'white'}} />
-                    <select value={tModalidad} onChange={e=>setTModalidad(e.target.value)} style={{padding:'8px', background:'var(--dark)', border:'1px solid rgba(255,255,255,0.1)', color:'white'}}>
-                      <option value="individual">Individual</option>
-                      <option value="pareja">Parejas</option>
-                    </select>
-                    <button className="btn-primary" style={{padding:'8px', background:'var(--gold)', border:'none', fontWeight:'bold', borderRadius:'5px'}} onClick={async () => {
-                      try {
-                        const res = await createTorneo(adminPass, tNombre, tFecha, tModalidad, generarBracket());
-                        if(res && res.error) { showToast(res.error, 'warning'); return; }
-                        setTNombre(''); setTFecha('');
-                        fetchDatos();
-                        showToast('Torneo creado');
-                      } catch (e) { showToast('Error al crear', 'warning'); }
-                    }}>CREAR TORNEO</button>
-                  </div>
-
-                  <div style={{display:'flex', flexDirection:'column', gap:'10px'}}>
-                    {torneos.map(t => (
-                      <div key={t.id} style={{background:'rgba(255,255,255,0.05)', padding:'15px', borderRadius:'8px', border:'1px solid rgba(255,255,255,0.1)'}}>
-                        <div style={{display:'flex', justifyContent:'space-between'}}>
-                          <div>
-                            <h4 style={{margin:0}}>{t.nombre}</h4>
-                            <div style={{fontSize:'0.8rem', color:'var(--grey)'}}>{t.fecha} · {t.modalidad}</div>
-                          </div>
-                          <div style={{display:'flex', gap:'5px'}}>
-                            <button style={{background:'transparent', border:'1px solid var(--gold)', color:'var(--gold)', padding:'5px 10px', borderRadius:'5px', cursor:'pointer'}} onClick={() => { setCurrentTorneo(t); setShowBracket(true); }}>BRACKET</button>
-                            <button style={{background:'rgba(232,0,61,0.2)', border:'1px solid var(--red)', color:'var(--red)', padding:'5px 10px', borderRadius:'5px', cursor:'pointer'}} onClick={async () => {
-                              if(confirm('¿Eliminar torneo?')) {
-                                await removeTorneo(adminPass, t.id);
-                                fetchDatos();
-                              }
-                            }}>✕</button>
-                          </div>
-                        </div>
-                        {t.campeon && <div style={{color:'var(--gold)', fontSize:'0.85rem', fontWeight:'bold', marginTop:'10px'}}>🏆 Campeón: {t.campeon}</div>}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
         </div>
       </div>
-
-      {/* Bracket Modal */}
-      {showBracket && currentTorneo && (
-        <div className="bracket-overlay active" onClick={(e) => { if(e.target.className.includes('bracket-overlay')) setShowBracket(false) }}>
-          <div className="bracket-modal" onClick={e=>e.stopPropagation()} style={{background:'var(--black2)', padding:'2rem', borderRadius:'8px', border:'1px solid var(--gold)', maxWidth:'90vw', overflowX:'auto'}}>
-            <div style={{display:'flex', justifyContent:'space-between', marginBottom:'1.5rem'}}>
-              <h2 style={{color:'var(--gold)', margin:0}}>{currentTorneo.nombre}</h2>
-              <button style={{background:'none', border:'none', color:'white', cursor:'pointer', fontSize:'1.2rem'}} onClick={()=>setShowBracket(false)}>✕</button>
-            </div>
-            <div style={{display:'flex', gap:'2rem'}}>
-              {currentTorneo.partidos.map((ronda, rIdx) => (
-                <div key={rIdx} style={{minWidth:'200px'}}>
-                  <h4 style={{color:'var(--grey)', textAlign:'center', marginBottom:'1rem'}}>{ronda.nombre}</h4>
-                  <div style={{display:'flex', flexDirection:'column', gap:'1rem'}}>
-                    {ronda.partidos.map((p, pIdx) => (
-                      <div key={pIdx} style={{background:'rgba(255,255,255,0.05)', padding:'10px', borderRadius:'8px', border:'1px solid rgba(255,255,255,0.1)'}}>
-                        <div style={{display:'flex', flexDirection:'column', gap:'5px'}}>
-                          <input type="text" placeholder="Local" value={p.local} readOnly={rIdx > 0} onChange={async (e) => {
-                            if (rIdx > 0) return;
-                            const nt = {...currentTorneo}; nt.partidos[rIdx].partidos[pIdx].local = e.target.value; setCurrentTorneo(nt);
-                            await updateTorneo(adminPass, currentTorneo.id, { partidos: nt.partidos }); fetchDatos();
-                          }} style={{background: rIdx > 0 ? 'rgba(0,0,0,0.3)' : 'var(--dark)', color: p.ganador===p.local?'var(--gold)':'white', border:'1px solid #333', padding:'4px', fontWeight: p.ganador===p.local?'bold':'normal'}} />
-                          
-                          <input type="text" placeholder="Visitante" value={p.visitante} readOnly={rIdx > 0} onChange={async (e) => {
-                            if (rIdx > 0) return;
-                            const nt = {...currentTorneo}; nt.partidos[rIdx].partidos[pIdx].visitante = e.target.value; setCurrentTorneo(nt);
-                            await updateTorneo(adminPass, currentTorneo.id, { partidos: nt.partidos }); fetchDatos();
-                          }} style={{background: rIdx > 0 ? 'rgba(0,0,0,0.3)' : 'var(--dark)', color: p.ganador===p.visitante?'var(--gold)':'white', border:'1px solid #333', padding:'4px', fontWeight: p.ganador===p.visitante?'bold':'normal'}} />
-                          
-                          <div style={{display:'flex', gap:'10px', marginTop:'5px'}}>
-                            <input type="number" value={p.golesLocal} placeholder="0" style={{width:'50px', background:'var(--dark)', color:'white', border:'1px solid #333'}} onChange={(e) => updateScore(rIdx, pIdx, true, e.target.value)} />
-                            <span style={{color:'var(--grey)'}}>-</span>
-                            <input type="number" value={p.golesVisitante} placeholder="0" style={{width:'50px', background:'var(--dark)', color:'white', border:'1px solid #333'}} onChange={(e) => updateScore(rIdx, pIdx, false, e.target.value)} />
-                          </div>
-                          
-                          {(p.local && p.visitante && p.golesLocal !== '' && p.golesVisitante !== '' && p.golesLocal === p.golesVisitante) && (
-                            <div style={{display:'flex', gap:'5px', marginTop:'5px'}}>
-                              <span style={{fontSize:'0.7rem', color:'var(--grey)', alignSelf:'center'}}>Ganador:</span>
-                              <button style={{fontSize:'0.7rem', padding:'2px', background: p.ganador===p.local?'rgba(255,215,0,0.3)':'transparent', border:'1px solid var(--gold)', color:'white', cursor:'pointer'}} onClick={() => setManualWinner(rIdx, pIdx, p.local)}>{p.local}</button>
-                              <button style={{fontSize:'0.7rem', padding:'2px', background: p.ganador===p.visitante?'rgba(255,215,0,0.3)':'transparent', border:'1px solid var(--gold)', color:'white', cursor:'pointer'}} onClick={() => setManualWinner(rIdx, pIdx, p.visitante)}>{p.visitante}</button>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              ))}
-              
-              {/* Campeon selector if final has winner */}
-              {currentTorneo.partidos[3]?.partidos[0]?.ganador && (
-                <div style={{display:'flex', flexDirection:'column', justifyContent:'center', alignItems:'center', marginLeft:'2rem'}}>
-                  <span style={{fontSize:'3rem'}}>🏆</span>
-                  <div style={{color:'var(--gold)', fontWeight:'bold', fontSize:'1.2rem', textAlign:'center'}}>{currentTorneo.partidos[3].partidos[0].ganador}</div>
-                  <button style={{marginTop:'1rem', background:'var(--gold)', border:'none', fontWeight:'bold', padding:'8px 16px', borderRadius:'8px', cursor:'pointer'}} onClick={async () => {
-                     await updateTorneo(adminPass, currentTorneo.id, { campeon: currentTorneo.partidos[3].partidos[0].ganador });
-                     fetchDatos();
-                     showToast('Campeón Guardado!');
-                     setShowBracket(false);
-                  }}>GUARDAR CAMPEÓN</button>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Detail Modal (Detalle Campeón) */}
-      {selectedChampion && (() => {
-        const { name, team } = getNickAndEquipo(selectedChampion);
-        const embedUrls = (selectedChampion.youtube_links || [])
-          .map(link => getYoutubeEmbedUrl(link))
-          .filter(Boolean);
-        
-        return (
-          <div className="details-overlay active" onClick={() => setSelectedChampion(null)}>
-            <div className="details-modal" onClick={e => e.stopPropagation()}>
-              <button className="details-close" onClick={() => setSelectedChampion(null)}>✕</button>
-              
-              <div className="details-body">
-                <div className="details-left">
-                  <div className="details-img-wrapper">
-                    {selectedChampion.foto ? (
-                      <img className="details-img" src={selectedChampion.foto} alt={name} />
-                    ) : (
-                      <div className="details-placeholder">🎮</div>
-                    )}
-                  </div>
-                  
-                  <div className="details-stats">
-                    <div className="details-stat-item">
-                      <span className="details-stat-label">Edad</span>
-                      <span className="details-stat-value">{selectedChampion.edad || 'No especificada'}</span>
-                    </div>
-                    <div className="details-stat-item">
-                      <span className="details-stat-label">Residencia</span>
-                      <span className="details-stat-value">{selectedChampion.localidad || 'No especificada'}</span>
-                    </div>
-                    <div className="details-stat-item">
-                      <span className="details-stat-label">Votos Positivos</span>
-                      <span className="details-stat-value" style={{ color: '#28c850' }}>👍 {selectedChampion.likes || 0}</span>
-                    </div>
-                    <div className="details-stat-item">
-                      <span className="details-stat-label">Votos Negativos</span>
-                      <span className="details-stat-value" style={{ color: 'var(--red)' }}>👎 {selectedChampion.dislikes || 0}</span>
-                    </div>
-                  </div>
-                </div>
-                
-                <div className="details-right">
-                  <div className="details-title">
-                    <h2>{name}</h2>
-                    <div className="team">{team || 'Sin Equipo'}</div>
-                  </div>
-                  
-                  <div className="details-history">
-                    <h3>Historia del Campeón</h3>
-                    <p>{selectedChampion.historia || 'Este campeón aún no tiene una historia redactada.'}</p>
-                  </div>
-                  
-                  {embedUrls.length > 0 && (
-                    <div className="details-videos">
-                      <h3>Clips y Mejores Momentos</h3>
-                      <div className="details-video-grid">
-                        {embedUrls.map((url, idx) => (
-                          <div key={idx} className="details-video-wrapper">
-                            <iframe 
-                              src={url} 
-                              title={`Video ${idx + 1}`} 
-                              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
-                              allowFullScreen
-                            />
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
-          </div>
-        );
-      })()}
-
     </main>
   );
 }

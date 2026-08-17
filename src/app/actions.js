@@ -12,10 +12,10 @@ export async function checkAdminPassword(password) {
   return verifyPassword(password);
 }
 
-export async function addClasificado(password, nick, foto, desc_text, equipo = '', edad = '', localidad = '', historia = '', youtube_links = []) {
+export async function addClasificado(password, nick, foto, desc_text, equipo = '', edad = '', localidad = '', historia = '', youtube_links = [], tipo = 'campeon') {
   if (!verifyPassword(password)) return { error: "Contraseña incorrecta" };
   const { data, error } = await supabase.from('clasificados').insert([{ 
-    nick, foto, desc_text, equipo, edad, localidad, historia, youtube_links 
+    nick, foto, desc_text, equipo, edad, localidad, historia, youtube_links, tipo 
   }]).select();
   if (error) return { error: "Error al guardar en base de datos" };
   return { success: true, data };
@@ -32,27 +32,6 @@ export async function removeClasificado(password, id) {
   if (!verifyPassword(password)) return { error: "Contraseña incorrecta" };
   const { error } = await supabase.from('clasificados').delete().eq('id', id);
   if (error) return { error: "Error al eliminar en base de datos" };
-  return { success: true };
-}
-
-export async function createTorneo(password, nombre, fecha, modalidad, partidos) {
-  if (!verifyPassword(password)) return { error: "Contraseña incorrecta" };
-  const { data, error } = await supabase.from('torneos').insert([{ nombre, fecha, modalidad, partidos }]).select();
-  if (error) return { error: "Error al crear torneo" };
-  return { success: true, data };
-}
-
-export async function updateTorneo(password, id, updates) {
-  if (!verifyPassword(password)) return { error: "Contraseña incorrecta" };
-  const { error } = await supabase.from('torneos').update(updates).eq('id', id);
-  if (error) return { error: "Error al actualizar torneo" };
-  return { success: true };
-}
-
-export async function removeTorneo(password, id) {
-  if (!verifyPassword(password)) return { error: "Contraseña incorrecta" };
-  const { error } = await supabase.from('torneos').delete().eq('id', id);
-  if (error) return { error: "Error al eliminar torneo" };
   return { success: true };
 }
 
