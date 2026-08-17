@@ -54,7 +54,15 @@ export default function ParticipantesPage() {
   const fetchDatos = async () => {
     if (!supabase) return;
     const { data: clas } = await supabase.from('clasificados').select('*').order('id', { ascending: true });
-    if (clas) setClasificados(clas);
+    if (clas) {
+      const sorted = [...clas].sort((a, b) => {
+        const infA = a.tipo === 'influencer' ? 1 : 0;
+        const infB = b.tipo === 'influencer' ? 1 : 0;
+        if (infA !== infB) return infB - infA;
+        return a.id - b.id;
+      });
+      setClasificados(sorted);
+    }
   };
 
   useEffect(() => {
