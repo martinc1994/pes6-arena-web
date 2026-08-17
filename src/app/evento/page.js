@@ -2,6 +2,7 @@
 
 import { useEffect, useRef } from 'react';
 import Link from 'next/link';
+import ThemeToggle from '@/components/ThemeToggle';
 
 export default function EventoPage() {
   const sectionRefs = useRef([]);
@@ -28,7 +29,10 @@ export default function EventoPage() {
             <li><Link href="/participantes">Participantes</Link></li>
             <li><Link href="/clasificar">Clasificar</Link></li>
           </ul>
-          <Link href="/" className="nav-back-btn">← VOLVER</Link>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginLeft: 'auto' }}>
+            <ThemeToggle />
+            <Link href="/" className="nav-back-btn">← VOLVER</Link>
+          </div>
         </div>
       </nav>
 

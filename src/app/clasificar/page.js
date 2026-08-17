@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import ThemeToggle from '@/components/ThemeToggle';
 
 export default function ClasificarPage() {
   const instagramUrl = 'https://www.instagram.com/pes6arena';
@@ -17,7 +18,10 @@ export default function ClasificarPage() {
             <li><Link href="/evento">Evento</Link></li>
             <li><Link href="/participantes">Participantes</Link></li>
           </ul>
-          <Link href="/" className="nav-back-btn">← VOLVER</Link>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginLeft: 'auto' }}>
+            <ThemeToggle />
+            <Link href="/" className="nav-back-btn">← VOLVER</Link>
+          </div>
         </div>
       </nav>
 

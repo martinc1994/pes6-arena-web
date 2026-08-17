@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { voteClasificado } from '../actions';
 import Link from 'next/link';
+import ThemeToggle from '@/components/ThemeToggle';
 
 const TOTAL_SLOTS = 16;
 
@@ -45,7 +46,7 @@ export default function ParticipantesPage() {
 
   const getBadgeInfo = (c) => {
     if (c.tipo === 'influencer') {
-      return { text: 'INFLUENCER', className: 'badge-influencer' };
+      return { text: '🎙️ INFLUENCER', className: 'badge-influencer' };
     }
     return { text: c.desc_text || 'CLASIFICADO', className: 'badge-campeon' };
   };
@@ -105,7 +106,10 @@ export default function ParticipantesPage() {
             <li><Link href="/evento">Evento</Link></li>
             <li><Link href="/clasificar">Clasificar</Link></li>
           </ul>
-          <Link href="/" className="nav-back-btn">← VOLVER</Link>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginLeft: 'auto' }}>
+            <ThemeToggle />
+            <Link href="/" className="nav-back-btn">← VOLVER</Link>
+          </div>
         </div>
       </nav>
 
@@ -128,8 +132,14 @@ export default function ParticipantesPage() {
             if (c) {
               const { name, team } = getNickAndEquipo(c);
               const badge = getBadgeInfo(c);
+              const isInfluencer = c.tipo === 'influencer';
               return (
-                <div key={c.id} className="champion-card fade-in visible" onClick={() => setSelectedChampion(c)} style={{ cursor: 'pointer' }}>
+                <div
+                  key={c.id}
+                  className={`champion-card ${isInfluencer ? 'champion-card-influencer' : ''} fade-in visible`}
+                  onClick={() => setSelectedChampion(c)}
+                  style={{ cursor: 'pointer' }}
+                >
                   <div className={`champion-badge ${badge.className}`}>{badge.text}</div>
                   {c.foto ? (
                     <img className="champion-photo" src={c.foto} alt={name} onError={(e) => { e.target.style.display = 'none'; e.target.nextSibling.style.display = 'flex' }} />
@@ -168,7 +178,7 @@ export default function ParticipantesPage() {
         </div>
       </section>
 
-      <footer className="footer" style={{ background: 'var(--black2)', padding: '3rem 2rem', textAlign: 'center', borderTop: '1px solid rgba(255,255,255,0.05)' }}>
+      <footer className="footer" style={{ padding: '3rem 2rem', textAlign: 'center', borderTop: '1px solid rgba(255,255,255,0.05)' }}>
         <div className="footer-logo" style={{ justifyContent: 'center', marginBottom: '1rem', display: 'flex', alignItems: 'baseline', gap: '2px' }}>
           <span className="logo-vf" style={{ color: 'var(--gold)', fontFamily: "'Bebas Neue', sans-serif", fontSize: '1.8rem' }}>VF</span>
           <span className="logo-cup" style={{ color: 'var(--red)', fontFamily: "'Bebas Neue', sans-serif", fontSize: '1.2rem', marginLeft: '5px' }}>PES6</span>

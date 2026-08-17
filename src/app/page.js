@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
 import { checkAdminPassword, addClasificado, removeClasificado, updateClasificado } from './actions';
+import ThemeToggle from '@/components/ThemeToggle';
 
 const TOTAL_SLOTS = 16;
 
@@ -146,6 +147,9 @@ export default function Home() {
 
   return (
     <main className="portada">
+      <div style={{ position: 'absolute', top: '1.5rem', right: '1.5rem', zIndex: 10 }}>
+        <ThemeToggle />
+      </div>
       <canvas className="pitch-canvas" ref={canvasRef}></canvas>
       <div className="hero-overlay"></div>
 
@@ -242,7 +246,7 @@ export default function Home() {
               onMouseEnter={(e) => { e.target.style.color = 'var(--gold)'; e.target.style.borderColor = 'var(--gold)'; }}
               onMouseLeave={(e) => { e.target.style.color = 'rgba(255,255,255,0.4)'; e.target.style.borderColor = 'rgba(255,255,255,0.15)'; }}
             >
-              ⚙️ MÓDULO ADMIN
+              ⚙️ ADMIN
             </button>
           </div>
         </div>
