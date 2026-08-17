@@ -239,22 +239,26 @@ export default function Home() {
           <div>
             <button
               onClick={() => setShowAdmin(true)}
+              title="Acceso Admin"
+              aria-label="Acceso Admin"
               style={{
                 background: 'rgba(255,255,255,0.04)',
-                border: '1px solid rgba(255,255,255,0.15)',
-                color: 'rgba(255,255,255,0.4)',
-                padding: '0.4rem 1rem',
-                borderRadius: '6px',
-                fontSize: '0.72rem',
+                border: '1px solid rgba(255,255,255,0.12)',
+                color: 'rgba(255,255,255,0.35)',
+                width: '32px',
+                height: '32px',
+                borderRadius: '50%',
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: '0.85rem',
                 cursor: 'pointer',
-                letterSpacing: '1.5px',
-                textTransform: 'uppercase',
                 transition: 'all 0.2s ease',
               }}
-              onMouseEnter={(e) => { e.target.style.color = 'var(--gold)'; e.target.style.borderColor = 'var(--gold)'; }}
-              onMouseLeave={(e) => { e.target.style.color = 'rgba(255,255,255,0.4)'; e.target.style.borderColor = 'rgba(255,255,255,0.15)'; }}
+              onMouseEnter={(e) => { e.currentTarget.style.color = 'var(--gold)'; e.currentTarget.style.borderColor = 'var(--gold)'; e.currentTarget.style.background = 'rgba(255,215,0,0.08)'; }}
+              onMouseLeave={(e) => { e.currentTarget.style.color = 'rgba(255,255,255,0.35)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.12)'; e.currentTarget.style.background = 'rgba(255,255,255,0.04)'; }}
             >
-              ⚙️ ADMIN
+              ⚙️
             </button>
           </div>
         </div>

@@ -1285,6 +1285,38 @@ section { padding: 6rem 2rem; }
   .admin-panel { width: 100%; }
   .galeria-grid { grid-template-columns: 1fr; }
   .clasificar-info-box { flex-direction: column; text-align: center; align-items: center; }
+
+  /* Reducción ~25% footer en móvil */
+  .footer {
+    padding: 1.75rem 1rem !important;
+  }
+  .footer-logo {
+    margin-bottom: 0.5rem !important;
+  }
+  .footer-logo .logo-vf {
+    font-size: 1.35rem !important;
+  }
+  .footer-logo .logo-cup {
+    font-size: 0.9rem !important;
+  }
+  .footer p, .footer-tagline {
+    font-size: 0.72rem !important;
+    margin-bottom: 0.9rem !important;
+  }
+  .footer-links {
+    gap: 0.75rem !important;
+    margin-bottom: 0.9rem !important;
+  }
+  .footer a {
+    font-size: 0.72rem !important;
+  }
+  .footer div[style*="marginTop"] {
+    margin-top: 1rem !important;
+    padding-top: 0.9rem !important;
+  }
+  .portada-credit {
+    font-size: 0.72rem !important;
+  }
 }
 
 /* ---- ANIMACIONES ENTRADA ---- */
