@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
-import { checkAdminPassword, addClasificado, removeClasificado, updateClasificado, voteClasificado } from '../actions';
+import { voteClasificado } from '../actions';
 import Link from 'next/link';
 
 const TOTAL_SLOTS = 16;
@@ -10,30 +10,6 @@ const TOTAL_SLOTS = 16;
 export default function ParticipantesPage() {
   const [toastMsg, setToastMsg] = useState(null);
   const [clasificados, setClasificados] = useState([]);
-
-  // Admin Panel
-  const [showAdmin, setShowAdmin] = useState(false);
-  const [adminLoggedIn, setAdminLoggedIn] = useState(false);
-  const [adminPass, setAdminPass] = useState('');
-  const [adminError, setAdminError] = useState('');
-
-  // Admin Form - Clasificados
-  const [cNick, setCNick] = useState('');
-  const [cImgFile, setCImgFile] = useState(null);
-  const [uploading, setUploading] = useState(false);
-  const [cDesc, setCDesc] = useState('');
-  const [cEquipo, setCEquipo] = useState('');
-  const [cEdad, setCEdad] = useState('');
-  const [cLocalidad, setCLocalidad] = useState('');
-  const [cHistoria, setCHistoria] = useState('');
-  const [cYoutube1, setCYoutube1] = useState('');
-  const [cYoutube2, setCYoutube2] = useState('');
-  const [cYoutube3, setCYoutube3] = useState('');
-  const [cTipo, setCTipo] = useState('campeon');
-  const [editMode, setEditMode] = useState(false);
-  const [editingId, setEditingId] = useState(null);
-
-  // Detail Modal
   const [selectedChampion, setSelectedChampion] = useState(null);
 
   const showToast = (msg, type = 'success') => {
@@ -74,40 +50,6 @@ export default function ParticipantesPage() {
     return { text: c.desc_text || 'CLASIFICADO', className: 'badge-campeon' };
   };
 
-  const startEdit = (c) => {
-    setEditMode(true);
-    setEditingId(c.id);
-    setCNick(c.nick || '');
-    setCDesc(c.desc_text || '');
-    setCEquipo(c.equipo || '');
-    setCEdad(c.edad || '');
-    setCLocalidad(c.localidad || '');
-    setCHistoria(c.historia || '');
-    setCYoutube1(c.youtube_links?.[0] || '');
-    setCYoutube2(c.youtube_links?.[1] || '');
-    setCYoutube3(c.youtube_links?.[2] || '');
-    setCTipo(c.tipo || 'campeon');
-  };
-
-  const cancelEdit = () => {
-    setEditMode(false);
-    setEditingId(null);
-    setCNick('');
-    setCDesc('');
-    setCEquipo('');
-    setCEdad('');
-    setCLocalidad('');
-    setCHistoria('');
-    setCYoutube1('');
-    setCYoutube2('');
-    setCYoutube3('');
-    setCTipo('campeon');
-    if (document.getElementById('fileInputFoto')) {
-      document.getElementById('fileInputFoto').value = '';
-    }
-    setCImgFile(null);
-  };
-
   const fetchDatos = async () => {
     if (!supabase) return;
     const { data: clas } = await supabase.from('clasificados').select('*').order('id', { ascending: true });
@@ -138,16 +80,6 @@ export default function ParticipantesPage() {
       fetchDatos();
     } catch (e) {
       showToast('Ocurrió un error al votar.', 'warning');
-    }
-  };
-
-  const handleAdminLogin = async () => {
-    const valid = await checkAdminPassword(adminPass);
-    if (valid) {
-      setAdminLoggedIn(true);
-    } else {
-      setAdminError('Contraseña incorrecta');
-      setTimeout(() => setAdminError(''), 2000);
     }
   };
 
@@ -252,9 +184,6 @@ export default function ParticipantesPage() {
           <a href="https://wa.me/543816232650?text=Hola%20Mart%C3%ADn!%20Vi%20tu%20trabajo%20en%20la%20p%C3%A1gina%20de%20ValenFulvo%20y%20me%20gustar%C3%ADa%20consultar%20por%20tus%20servicios%20de%20desarrollo." target="_blank" rel="noopener noreferrer" style={{ color: 'var(--grey)', textDecoration: 'none', fontSize: '0.85rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
             Desarrollado por <span style={{ color: 'var(--gold)', fontWeight: 'bold' }}>Martín Castillo</span>
           </a>
-          <div style={{ marginTop: '1.5rem' }}>
-            <button onClick={() => setShowAdmin(true)} style={{ background: 'transparent', border: 'none', color: 'rgba(255,255,255,0.1)', fontSize: '0.7rem', cursor: 'pointer', letterSpacing: '1px', textTransform: 'uppercase' }}>MODULO ADMIN</button>
-          </div>
         </div>
       </footer>
 
@@ -270,159 +199,9 @@ export default function ParticipantesPage() {
         </div>
       )}
 
-      {/* Admin Overlay */}
-      <div className={`admin-overlay ${showAdmin ? 'active' : ''}`} onClick={(e) => { if (e.target.className.includes('admin-overlay')) setShowAdmin(false) }}>
-        <div className="admin-panel" onClick={(e) => e.stopPropagation()}>
-          <div className="admin-header">
-            <h2>Panel Administrador</h2>
-            <button className="admin-close" onClick={() => setShowAdmin(false)}>✕</button>
-          </div>
-
-          {!adminLoggedIn ? (
-            <div className="admin-login">
-              <p>Acceso restringido</p>
-              <input type="password" value={adminPass} onChange={e => setAdminPass(e.target.value)} placeholder="Contraseña" style={{ background: 'rgba(255,255,255,0.05)', color: 'white', border: '1px solid rgba(255,255,255,0.1)', padding: '0.75rem', borderRadius: '8px' }} />
-              <button className="btn-primary" onClick={handleAdminLogin} style={{ padding: '0.75rem', border: 'none', background: 'var(--gold)', fontWeight: 'bold', borderRadius: '8px', cursor: 'pointer' }}>INGRESAR</button>
-              {adminError && <p style={{ color: 'var(--red)' }}>{adminError}</p>}
-            </div>
-          ) : (
-            <div className="admin-content">
-              <div style={{ fontSize: '0.8rem', fontWeight: 'bold', color: 'var(--gold)', letterSpacing: '1px', textTransform: 'uppercase', marginBottom: '10px' }}>
-                Gestión de Participantes ({clasificados.length}/{TOTAL_SLOTS})
-              </div>
-
-              <div style={{ background: 'rgba(255,255,255,0.05)', padding: '15px', borderRadius: '8px', marginBottom: '20px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                <div style={{ fontSize: '0.8rem', fontWeight: 'bold', color: 'var(--gold)', letterSpacing: '1px', textTransform: 'uppercase' }}>
-                  {editMode ? 'Editar Participante' : 'Agregar Nuevo Participante'}
-                </div>
-
-                <input type="text" placeholder="Nick / Nombre" value={cNick} onChange={e => setCNick(e.target.value)} style={{ padding: '8px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: 'white', borderRadius: '6px' }} />
-                <input type="text" placeholder="Equipo (ej: ARSENAL)" value={cEquipo} onChange={e => setCEquipo(e.target.value)} style={{ padding: '8px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: 'white', borderRadius: '6px' }} />
-
-                {/* TIPO selector */}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
-                  <label style={{ fontSize: '0.7rem', color: 'var(--grey)', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '1px' }}>Tipo de Participante</label>
-                  <select value={cTipo} onChange={e => setCTipo(e.target.value)} style={{ padding: '8px', background: 'var(--dark)', border: '1px solid rgba(255,255,255,0.1)', color: 'white', borderRadius: '6px' }}>
-                    <option value="campeon">🏆 Campeón de Torneo</option>
-                    <option value="influencer">🎙️ Influencer</option>
-                  </select>
-                </div>
-
-                <div style={{ display: 'flex', gap: '10px' }}>
-                  <input type="text" placeholder="Edad (ej: 25 años)" value={cEdad} onChange={e => setCEdad(e.target.value)} style={{ padding: '8px', flex: 1, background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: 'white', borderRadius: '6px' }} />
-                  <input type="text" placeholder="Localidad (ej: Buenos Aires)" value={cLocalidad} onChange={e => setCLocalidad(e.target.value)} style={{ padding: '8px', flex: 1, background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: 'white', borderRadius: '6px' }} />
-                </div>
-
-                <textarea placeholder="Historia / Descripción detallada" value={cHistoria} onChange={e => setCHistoria(e.target.value)} rows={3} style={{ padding: '8px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: 'white', resize: 'vertical', fontFamily: 'inherit', borderRadius: '6px' }} />
-
-                <div style={{ border: '1px solid rgba(255,255,255,0.05)', padding: '10px', borderRadius: '6px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                  <span style={{ fontSize: '0.75rem', color: 'var(--grey)', fontWeight: 'bold' }}>Videos de YouTube (Hasta 3 links)</span>
-                  <input type="text" placeholder="Link de YouTube 1" value={cYoutube1} onChange={e => setCYoutube1(e.target.value)} style={{ padding: '6px', fontSize: '0.85rem', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: 'white', borderRadius: '6px' }} />
-                  <input type="text" placeholder="Link de YouTube 2" value={cYoutube2} onChange={e => setCYoutube2(e.target.value)} style={{ padding: '6px', fontSize: '0.85rem', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: 'white', borderRadius: '6px' }} />
-                  <input type="text" placeholder="Link de YouTube 3" value={cYoutube3} onChange={e => setCYoutube3(e.target.value)} style={{ padding: '6px', fontSize: '0.85rem', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: 'white', borderRadius: '6px' }} />
-                </div>
-
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
-                  <label style={{ fontSize: '0.7rem', color: 'var(--grey)' }}>Foto del Participante {editMode && '(dejar en blanco para mantener la actual)'}</label>
-                  <input type="file" id="fileInputFoto" accept="image/*" onChange={e => { if (e.target.files && e.target.files[0]) setCImgFile(e.target.files[0]) }} style={{ padding: '8px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: 'white', borderRadius: '6px' }} />
-                </div>
-
-                <input type="text" placeholder={cTipo === 'influencer' ? 'Detalle (ej: Streamer de PES6)' : 'Detalle / Badge (ej: Campeón Torneo #3)'} value={cDesc} onChange={e => setCDesc(e.target.value)} style={{ padding: '8px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: 'white', borderRadius: '6px' }} />
-
-                <button className="btn-primary" disabled={uploading || (!editMode && clasificados.length >= TOTAL_SLOTS)} style={{ padding: '10px', background: uploading ? 'var(--grey)' : 'var(--gold)', border: 'none', fontWeight: 'bold', borderRadius: '5px', marginTop: '5px', cursor: 'pointer' }} onClick={async () => {
-                  if (!cNick) return showToast('El Nick es obligatorio', 'warning');
-                  if (!editMode && clasificados.length >= TOTAL_SLOTS) return showToast('Máximo 16 participantes alcanzado', 'warning');
-                  try {
-                    setUploading(true);
-                    let fotoUrl = editMode ? (clasificados.find(x => x.id === editingId)?.foto || '') : '';
-                    if (cImgFile) {
-                      const fileExt = cImgFile.name.split('.').pop();
-                      const fileName = `${Date.now()}.${fileExt}`;
-                      if (!supabase) throw new Error('Supabase no configurado');
-                      const { data, error } = await supabase.storage.from('campeones').upload(fileName, cImgFile);
-                      if (error) throw new Error('Error al subir imagen a Supabase');
-                      const { data: { publicUrl } } = supabase.storage.from('campeones').getPublicUrl(fileName);
-                      fotoUrl = publicUrl;
-                    }
-
-                    const youtube_links = [cYoutube1, cYoutube2, cYoutube3].filter(Boolean);
-
-                    if (editMode) {
-                      const res = await updateClasificado(adminPass, editingId, {
-                        nick: cNick,
-                        foto: fotoUrl,
-                        desc_text: cDesc,
-                        equipo: cEquipo,
-                        edad: cEdad,
-                        localidad: cLocalidad,
-                        historia: cHistoria,
-                        youtube_links,
-                        tipo: cTipo
-                      });
-                      if (res && res.error) { showToast(res.error, 'warning'); setUploading(false); return; }
-                      showToast('Participante actualizado');
-                    } else {
-                      const res = await addClasificado(adminPass, cNick, fotoUrl, cDesc, cEquipo, cEdad, cLocalidad, cHistoria, youtube_links, cTipo);
-                      if (res && res.error) { showToast(res.error, 'warning'); setUploading(false); return; }
-                      showToast('Participante agregado');
-                    }
-
-                    cancelEdit();
-                    fetchDatos();
-                  } catch (e) { showToast(e.message || 'Error al guardar', 'warning'); } finally { setUploading(false); }
-                }}>{uploading ? 'GUARDANDO...' : (editMode ? 'GUARDAR CAMBIOS' : (clasificados.length >= TOTAL_SLOTS ? 'MÁXIMO ALCANZADO' : 'AGREGAR PARTICIPANTE'))}</button>
-
-                {editMode && (
-                  <button className="btn-ghost" style={{ padding: '8px', border: '1px solid rgba(255,255,255,0.2)', color: 'white', borderRadius: '5px', fontWeight: 'bold', cursor: 'pointer' }} onClick={cancelEdit}>CANCELAR EDICIÓN</button>
-                )}
-              </div>
-
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                {clasificados.map(c => {
-                  const { name, team } = getNickAndEquipo(c);
-                  const badge = getBadgeInfo(c);
-                  return (
-                    <div key={c.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(255,255,255,0.05)', padding: '10px', borderRadius: '8px' }}>
-                      <div>
-                        <div style={{ fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                          {name}
-                          <span style={{
-                            fontSize: '0.6rem',
-                            padding: '2px 6px',
-                            borderRadius: '4px',
-                            background: c.tipo === 'influencer' ? 'linear-gradient(45deg, #f09433, #dc2743)' : 'rgba(255,215,0,0.2)',
-                            color: c.tipo === 'influencer' ? '#fff' : 'var(--gold)',
-                            fontWeight: 900,
-                            letterSpacing: '1px',
-                            textTransform: 'uppercase'
-                          }}>
-                            {c.tipo === 'influencer' ? 'INFLUENCER' : 'CAMPEÓN'}
-                          </span>
-                        </div>
-                        <div style={{ fontSize: '0.8rem', color: 'var(--gold)' }}>{team || 'Sin Equipo'}</div>
-                      </div>
-                      <div style={{ display: 'flex', gap: '8px' }}>
-                        <button style={{ background: 'rgba(255,215,0,0.15)', border: '1px solid var(--gold)', color: 'var(--gold)', padding: '5px 10px', borderRadius: '5px', cursor: 'pointer' }} onClick={() => startEdit(c)}>✏️</button>
-                        <button style={{ background: 'rgba(232,0,61,0.2)', border: '1px solid var(--red)', color: 'var(--red)', padding: '5px 10px', borderRadius: '5px', cursor: 'pointer' }} onClick={async () => {
-                          if (confirm('¿Eliminar?')) {
-                            await removeClasificado(adminPass, c.id);
-                            fetchDatos();
-                          }
-                        }}>✕</button>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          )}
-        </div>
-      </div>
-
       {/* Detail Modal (Detalle Participante) */}
       {selectedChampion && (() => {
         const { name, team } = getNickAndEquipo(selectedChampion);
-        const badge = getBadgeInfo(selectedChampion);
         const embedUrls = (selectedChampion.youtube_links || [])
           .map(link => getYoutubeEmbedUrl(link))
           .filter(Boolean);
