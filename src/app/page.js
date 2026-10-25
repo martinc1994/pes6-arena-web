@@ -176,7 +176,7 @@ export default function Home() {
 
         <div className="hero-event-box">
           <div className="event-date-block">
-            <span className="event-day">21</span>
+            <span className="event-day">22</span>
             <div className="event-detail">
               <span className="event-month">NOVIEMBRE</span>
               <span className="event-year">2026</span>

@@ -49,7 +49,7 @@ export default function EventoPage() {
             <span className="label-line"></span>
           </div>
           <h1 className="section-title centered">La Pasión del PES<br /><em>como nunca antes</em></h1>
-          <p className="hero-sub">📅 Sábado 21 de Noviembre · 📍 Microestadio de Garín (Blvd. Pres. Perón 450)</p>
+          <p className="hero-sub">📅 Domingo 22 de Noviembre · 📍 Microestadio de Garín (Blvd. Pres. Perón 450)</p>
           <div style={{ marginTop: '1.25rem', display: 'inline-block', background: 'rgba(255, 215, 0, 0.12)', border: '1px solid var(--gold)', padding: '0.6rem 1.5rem', borderRadius: '50px', fontWeight: 'bold', color: 'var(--gold)', letterSpacing: '0.5px' }}>
             🎟️ ENTRADA: 1 Alimento No Perecedero
           </div>
@@ -120,7 +120,7 @@ export default function EventoPage() {
             <div className="stadium-img-wrapper">
               <img src="/recursos/microestadiointerior.jpeg" alt="Microestadio Garín Interior" className="stadium-img" />
               <div className="stadium-badge">
-                <span className="badge-date">21 NOV</span>
+                <span className="badge-date">22 NOV</span>
               </div>
             </div>
           </div>

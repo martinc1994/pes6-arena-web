@@ -2,13 +2,13 @@ import "./globals.css";
 
 export const metadata = {
   title: "PES6 Arena — El evento más grande de PES6",
-  description: "16 participantes, un microestadio real, shows en vivo y el PES6 como nunca lo viste. 21 de Noviembre 2026, Garín, Buenos Aires.",
+  description: "16 participantes, un microestadio real, shows en vivo y el PES6 como nunca lo viste. 22 de Noviembre 2026, Garín, Buenos Aires.",
   icons: {
     icon: '/logofondonegro.png',
   },
   openGraph: {
     title: 'PES6 Arena — El evento más grande de PES6',
-    description: '16 participantes, un microestadio real, shows en vivo y el PES6 como nunca lo viste. 21 de Noviembre 2026.',
+    description: '16 participantes, un microestadio real, shows en vivo y el PES6 como nunca lo viste. 22 de Noviembre 2026.',
     siteName: 'PES6 Arena',
     images: [
       {
