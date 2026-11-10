@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
 import { checkAdminPassword, addClasificado, removeClasificado, updateClasificado } from './actions';
 import ThemeToggle from '@/components/ThemeToggle';
+import { getClasificadosConVotos } from '@/lib/participantes';
 
 const TOTAL_SLOTS = 16;
 
@@ -19,7 +20,7 @@ export default function Home() {
   const [toastMsg, setToastMsg] = useState(null);
 
   // Admin Form - Clasificados
-  const [clasificados, setClasificados] = useState([]);
+  const [clasificados, setClasificados] = useState(() => getClasificadosConVotos());
   const [cNick, setCNick] = useState('');
   const [cImgFile, setCImgFile] = useState(null);
   const [uploading, setUploading] = useState(false);
@@ -41,16 +42,20 @@ export default function Home() {
   };
 
   const fetchDatos = async () => {
-    if (!supabase) return;
-    const { data: clas } = await supabase.from('clasificados').select('*').order('id', { ascending: true });
-    if (clas) {
-      const sorted = [...clas].sort((a, b) => {
-        const infA = a.tipo === 'influencer' ? 1 : 0;
-        const infB = b.tipo === 'influencer' ? 1 : 0;
-        if (infA !== infB) return infB - infA;
-        return a.id - b.id;
-      });
-      setClasificados(sorted);
+    try {
+      if (!supabase) return;
+      const { data: clas } = await supabase.from('clasificados').select('*').order('id', { ascending: true });
+      if (clas && clas.length > 0) {
+        const sorted = [...clas].sort((a, b) => {
+          const infA = a.tipo === 'influencer' ? 1 : 0;
+          const infB = b.tipo === 'influencer' ? 1 : 0;
+          if (infA !== infB) return infB - infA;
+          return a.id - b.id;
+        });
+        setClasificados(sorted);
+      }
+    } catch (e) {
+      console.warn("No se pudo conectar a Supabase, usando datos locales:", e);
     }
   };
 

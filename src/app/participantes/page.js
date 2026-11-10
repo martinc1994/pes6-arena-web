@@ -1,16 +1,15 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { supabase } from '@/lib/supabase';
-import { voteClasificado } from '../actions';
 import Link from 'next/link';
 import ThemeToggle from '@/components/ThemeToggle';
+import { getClasificadosConVotos } from '@/lib/participantes';
 
 const TOTAL_SLOTS = 16;
 
 export default function ParticipantesPage() {
   const [toastMsg, setToastMsg] = useState(null);
-  const [clasificados, setClasificados] = useState([]);
+  const [clasificados, setClasificados] = useState(() => getClasificadosConVotos());
   const [selectedChampion, setSelectedChampion] = useState(null);
 
   const showToast = (msg, type = 'success') => {
@@ -51,22 +50,30 @@ export default function ParticipantesPage() {
     return { text: c.desc_text || 'CLASIFICADO', className: 'badge-campeon' };
   };
 
-  const fetchDatos = async () => {
-    if (!supabase) return;
-    const { data: clas } = await supabase.from('clasificados').select('*').order('id', { ascending: true });
-    if (clas) {
-      const sorted = [...clas].sort((a, b) => {
-        const infA = a.tipo === 'influencer' ? 1 : 0;
-        const infB = b.tipo === 'influencer' ? 1 : 0;
-        if (infA !== infB) return infB - infA;
-        return a.id - b.id;
-      });
-      setClasificados(sorted);
-    }
-  };
-
   useEffect(() => {
-    fetchDatos();
+    try {
+      const baseList = getClasificadosConVotos();
+      const localVotesStr = localStorage.getItem('pes6_user_extra_votes');
+      if (localVotesStr) {
+        const extra = JSON.parse(localVotesStr);
+        const updated = baseList.map(c => {
+          const userVote = extra[c.id];
+          if (userVote) {
+            return {
+              ...c,
+              likes: c.likes + (userVote.likes || 0),
+              dislikes: c.dislikes + (userVote.dislikes || 0)
+            };
+          }
+          return c;
+        });
+        setClasificados(updated);
+      } else {
+        setClasificados(baseList);
+      }
+    } catch (e) {
+      setClasificados(getClasificadosConVotos());
+    }
   }, []);
 
   useEffect(() => {
@@ -78,17 +85,75 @@ export default function ParticipantesPage() {
     return () => observer.disconnect();
   }, [clasificados]);
 
-  const handleVote = async (id, type) => {
+  const handleVote = (id, type) => {
     try {
-      const res = await voteClasificado(id, type);
-      if (res && res.error) {
-        showToast(res.error, 'warning');
+      const now = Date.now();
+      const oneDayMs = 24 * 60 * 60 * 1000;
+      let logs = [];
+      try {
+        const savedLogs = localStorage.getItem('pes6_vote_timestamps');
+        if (savedLogs) logs = JSON.parse(savedLogs);
+      } catch (e) {
+        logs = [];
+      }
+
+      const recentVotes = logs.filter(timestamp => (now - timestamp) < oneDayMs);
+      if (recentVotes.length >= 2) {
+        showToast('Límite alcanzado: 2 votos por dispositivo cada 24hs.', 'warning');
         return;
       }
+
+      recentVotes.push(now);
+      localStorage.setItem('pes6_vote_timestamps', JSON.stringify(recentVotes));
+
+      let extraVotes = {};
+      try {
+        const savedExtra = localStorage.getItem('pes6_user_extra_votes');
+        if (savedExtra) extraVotes = JSON.parse(savedExtra);
+      } catch (e) {
+        extraVotes = {};
+      }
+
+      if (!extraVotes[id]) extraVotes[id] = { likes: 0, dislikes: 0 };
+      if (type === 'like') extraVotes[id].likes += 1;
+      else extraVotes[id].dislikes += 1;
+      localStorage.setItem('pes6_user_extra_votes', JSON.stringify(extraVotes));
+
+      setClasificados(prev => prev.map(c => {
+        if (c.id === id) {
+          return {
+            ...c,
+            likes: type === 'like' ? c.likes + 1 : c.likes,
+            dislikes: type === 'dislike' ? c.dislikes + 1 : c.dislikes
+          };
+        }
+        return c;
+      }));
+
+      setSelectedChampion(prev => {
+        if (prev && prev.id === id) {
+          return {
+            ...prev,
+            likes: type === 'like' ? prev.likes + 1 : prev.likes,
+            dislikes: type === 'dislike' ? prev.dislikes + 1 : prev.dislikes
+          };
+        }
+        return prev;
+      });
+
       showToast(type === 'like' ? '👍 Voto positivo registrado!' : '👎 Voto negativo registrado!', 'success');
-      fetchDatos();
     } catch (e) {
-      showToast('Ocurrió un error al votar.', 'warning');
+      setClasificados(prev => prev.map(c => {
+        if (c.id === id) {
+          return {
+            ...c,
+            likes: type === 'like' ? c.likes + 1 : c.likes,
+            dislikes: type === 'dislike' ? c.dislikes + 1 : c.dislikes
+          };
+        }
+        return c;
+      }));
+      showToast(type === 'like' ? '👍 Voto positivo registrado!' : '👎 Voto negativo registrado!', 'success');
     }
   };
 
