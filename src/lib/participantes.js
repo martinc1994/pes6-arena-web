@@ -47,6 +47,8 @@ export function getClasificadosConVotos(customDate = null) {
 
   const list = participantesData.map(p => ({
     ...p,
+    base_likes: p.likes || 0,
+    base_dislikes: p.dislikes || 0,
     likes: (p.likes || 0) + likesBonus,
     dislikes: (p.dislikes || 0) + dislikesBonus
   }));
@@ -58,4 +60,3 @@ export function getClasificadosConVotos(customDate = null) {
     return a.id - b.id;
   });
 }
-

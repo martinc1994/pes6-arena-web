@@ -3,7 +3,8 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import ThemeToggle from '@/components/ThemeToggle';
-import { getClasificadosConVotos } from '@/lib/participantes';
+import { supabase } from '@/lib/supabase';
+import { getClasificadosConVotos, getDailyVoteBonus } from '@/lib/participantes';
 
 const TOTAL_SLOTS = 16;
 
@@ -51,29 +52,66 @@ export default function ParticipantesPage() {
   };
 
   useEffect(() => {
+    let localVotes = {};
     try {
-      const baseList = getClasificadosConVotos();
       const localVotesStr = localStorage.getItem('pes6_user_extra_votes');
-      if (localVotesStr) {
-        const extra = JSON.parse(localVotesStr);
-        const updated = baseList.map(c => {
-          const userVote = extra[c.id];
-          if (userVote) {
-            return {
-              ...c,
-              likes: c.likes + (userVote.likes || 0),
-              dislikes: c.dislikes + (userVote.dislikes || 0)
-            };
-          }
-          return c;
-        });
-        setClasificados(updated);
-      } else {
-        setClasificados(baseList);
+      if (localVotesStr) localVotes = JSON.parse(localVotesStr);
+    } catch (e) {}
+
+    // 1. Mostrar de inmediato la lista local para carga instantánea
+    const baseList = getClasificadosConVotos();
+    const updatedInitial = baseList.map(c => {
+      const userVote = localVotes[c.id];
+      if (userVote) {
+        return {
+          ...c,
+          likes: c.likes + (userVote.likes || 0),
+          dislikes: c.dislikes + (userVote.dislikes || 0)
+        };
       }
-    } catch (e) {
-      setClasificados(getClasificadosConVotos());
-    }
+      return c;
+    });
+    setClasificados(updatedInitial);
+
+    // 2. Sincronizar en segundo plano con Supabase para reflejar cambios del admin
+    const syncWithSupabase = async () => {
+      try {
+        if (!supabase) return;
+        const { data: supaList, error } = await supabase.from('clasificados').select('*').order('id', { ascending: true });
+        if (supaList && supaList.length > 0) {
+          const { likesBonus, dislikesBonus } = getDailyVoteBonus();
+          const localMap = new Map(baseList.map(p => [p.id, p]));
+
+          const merged = supaList.map(sp => {
+            const lp = localMap.get(sp.id);
+            const userVote = localVotes[sp.id] || { likes: 0, dislikes: 0 };
+            const baseLikes = lp ? (lp.base_likes || lp.likes) : (sp.likes || 25);
+            const baseDislikes = lp ? (lp.base_dislikes || lp.dislikes) : (sp.dislikes || 1);
+
+            return {
+              ...sp,
+              // Mantener ruta local si la imagen ya fue descargada a public
+              foto: (lp && lp.foto) ? lp.foto : sp.foto,
+              likes: baseLikes + likesBonus + (userVote.likes || 0),
+              dislikes: baseDislikes + dislikesBonus + (userVote.dislikes || 0)
+            };
+          });
+
+          const sorted = merged.sort((a, b) => {
+            const infA = a.tipo === 'influencer' ? 1 : 0;
+            const infB = b.tipo === 'influencer' ? 1 : 0;
+            if (infA !== infB) return infB - infA;
+            return a.id - b.id;
+          });
+
+          setClasificados(sorted);
+        }
+      } catch (err) {
+        console.warn('Conexión con base de datos no disponible, usando datos locales:', err);
+      }
+    };
+
+    syncWithSupabase();
   }, []);
 
   useEffect(() => {
