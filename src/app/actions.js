@@ -37,10 +37,10 @@ export async function removeClasificado(password, id) {
 
 export async function voteClasificado(id, type) {
   try {
-    if (!supabase) return { success: true };
+    if (!supabase) return { error: "Supabase no disponible" };
     const headersList = await headers();
     const forwardedFor = headersList.get('x-forwarded-for');
-    const userIp = forwardedFor ? forwardedFor.split(',')[0] : '127.0.0.1';
+    const userIp = forwardedFor ? forwardedFor.split(',')[0].trim() : '127.0.0.1';
     
     const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
     const { data: recentVotes } = await supabase
@@ -49,20 +49,46 @@ export async function voteClasificado(id, type) {
       .eq('ip_address', userIp)
       .gte('created_at', oneDayAgo);
       
-    if (recentVotes && recentVotes.length >= 2) return { error: "Límite alcanzado: 2 votos por dispositivo cada 24hs." };
+    if (recentVotes && recentVotes.length >= 2) {
+      return { error: "Límite alcanzado: 2 votos por dispositivo cada 24hs." };
+    }
     
     await supabase.from('votes_log').insert([{ ip_address: userIp }]);
     
-    const { data: clas } = await supabase.from('clasificados').select('likes, dislikes').eq('id', id).single();
-    if (!clas) return { success: true };
+    const { data: clas, error: findErr } = await supabase
+      .from('clasificados')
+      .select('id, likes, dislikes')
+      .eq('id', id)
+      .single();
+      
+    if (findErr || !clas) return { error: "Participante no encontrado" };
     
-    const update = type === 'like' ? { likes: clas.likes + 1 } : { dislikes: clas.dislikes + 1 };
-    await supabase.from('clasificados').update(update).eq('id', id);
+    // Si es CABRA (id 33), asegurar base de 88 likes y 4 dislikes
+    let currentLikes = clas.likes || 0;
+    let currentDislikes = clas.dislikes || 0;
+    if (Number(id) === 33) {
+      if (currentLikes < 88) currentLikes = 88;
+      if (currentDislikes < 4) currentDislikes = 4;
+    }
+
+    const update = type === 'like'
+      ? { likes: currentLikes + 1, dislikes: currentDislikes }
+      : { likes: currentLikes, dislikes: currentDislikes + 1 };
+
+    const { error: updErr } = await supabase
+      .from('clasificados')
+      .update(update)
+      .eq('id', id);
+
+    if (updErr) {
+      console.error("Error al actualizar voto en Supabase:", updErr);
+      return { error: "Error al registrar voto en base de datos" };
+    }
     
-    return { success: true };
+    return { success: true, likes: update.likes, dislikes: update.dislikes };
   } catch (err) {
-    console.warn("Supabase no disponible para registrar voto en tabla:", err);
-    return { success: true };
+    console.error("Error en voteClasificado:", err);
+    return { error: "Error de conexión al registrar voto" };
   }
 }
 

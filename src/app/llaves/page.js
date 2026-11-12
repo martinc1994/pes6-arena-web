@@ -25,7 +25,7 @@ export default function LlavesPage() {
   const [bolilleroTestMode, setBolilleroTestMode] = useState(true);
 
   // Participantes completos (16)
-  const [playersList, setPlayersList] = useState([]);
+  const [playersList, setPlayersList] = useState(() => getClasificadosConVotos());
 
   const showToast = (msg, type = 'success') => {
     setToastMsg({ msg, type });
@@ -303,3 +303,4 @@ export default function LlavesPage() {
     </main>
   );
 }
+

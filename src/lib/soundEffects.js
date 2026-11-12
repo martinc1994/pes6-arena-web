@@ -143,3 +143,4 @@ class SorteoSoundPlayer {
 }
 
 export const soundPlayer = typeof window !== 'undefined' ? new SorteoSoundPlayer() : null;
+

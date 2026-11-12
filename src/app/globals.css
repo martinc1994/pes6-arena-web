@@ -2623,3 +2623,12 @@ section { padding: 6rem 2rem; }
   border-radius: 6px;
   cursor: pointer;
 }
+
+/* Efecto de iluminacion y scroll al asignar jugador a la llave */
+.mini-match-card.flash-highlight {
+  border-color: var(--gold) !important;
+  background: rgba(255, 215, 0, 0.18) !important;
+  box-shadow: 0 0 25px rgba(255, 215, 0, 0.8), inset 0 0 10px rgba(255, 215, 0, 0.3) !important;
+  transform: scale(1.06);
+  z-index: 10;
+}

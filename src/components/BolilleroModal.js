@@ -11,7 +11,10 @@ export default function BolilleroModal({
   onConfirmDefinitive = null
 }) {
   const canvasRef = useRef(null);
-  const [availablePlayers, setAvailablePlayers] = useState([]);
+  const availablePlayersRef = useRef([]);
+  const currentSlotRef = useRef(0);
+
+  const [availableCount, setAvailableCount] = useState(16);
   const [matches, setMatches] = useState(
     Array.from({ length: 8 }, (_, i) => ({
       id: i + 1,
@@ -35,14 +38,19 @@ export default function BolilleroModal({
   const initDraw = () => {
     setIsFinished(false);
     setIsAuto(false);
+    setIsSpinning(false);
     setCurrentSlotIndex(0);
+    currentSlotRef.current = 0;
     setExtractedBall(null);
     setRevealedPlayer(null);
     setShowConfirmModal(false);
 
-    // Mezclar aleatoriamente la lista de participantes disponibles
-    const shuffled = [...allPlayers].sort(() => Math.random() - 0.5);
-    setAvailablePlayers(shuffled);
+    // Mezclar aleatoriamente todos los participantes
+    const source = allPlayers && allPlayers.length > 0 ? allPlayers : [];
+    const shuffled = [...source].sort(() => Math.random() - 0.5);
+
+    availablePlayersRef.current = shuffled;
+    setAvailableCount(shuffled.length);
 
     setMatches(
       Array.from({ length: 8 }, (_, i) => ({
@@ -77,8 +85,7 @@ export default function BolilleroModal({
     // Colores PES clásicos para las bolillas
     const BALL_COLORS = ['#FFD700', '#E8003D', '#00D2FF', '#FFFFFF', '#FFA500', '#00FF88'];
 
-    // Cantidad de bolillas en el tambor según las que queden
-    const count = Math.max(availablePlayers.length, 1);
+    const count = Math.max(availableCount, 1);
     const balls = Array.from({ length: count }, (_, i) => {
       const angle = Math.random() * Math.PI * 2;
       const r = Math.random() * (radius - 28);
@@ -135,7 +142,6 @@ export default function BolilleroModal({
       clickTimer++;
 
       balls.forEach((b) => {
-        // Si está girando, aplicar turbulencia aleatoria
         if (isSpinning) {
           b.vx += (Math.random() - 0.5) * 1.5;
           b.vy += (Math.random() - 0.5) * 1.5;
@@ -144,11 +150,9 @@ export default function BolilleroModal({
         b.x += b.vx * speedMultiplier;
         b.y += b.vy * speedMultiplier;
 
-        // Fricción leve
         b.vx *= 0.99;
         b.vy *= 0.99;
 
-        // Rebote en pared esférica
         const dx = b.x - centerX;
         const dy = b.y - centerY;
         const dist = Math.sqrt(dx * dx + dy * dy);
@@ -169,12 +173,10 @@ export default function BolilleroModal({
           }
         }
 
-        // Dibujar bolilla individual
         ctx.save();
         ctx.beginPath();
         ctx.arc(b.x, b.y, b.r, 0, Math.PI * 2);
 
-        // Sombreado de bolilla 3D
         const bGrad = ctx.createRadialGradient(b.x - 3, b.y - 4, 1, b.x, b.y, b.r);
         bGrad.addColorStop(0, '#FFFFFF');
         bGrad.addColorStop(0.35, b.color);
@@ -184,7 +186,6 @@ export default function BolilleroModal({
         ctx.shadowBlur = 4;
         ctx.fill();
 
-        // Número en la bolilla
         ctx.fillStyle = '#111';
         ctx.font = 'bold 9px monospace';
         ctx.textAlign = 'center';
@@ -198,27 +199,46 @@ export default function BolilleroModal({
 
     loop();
     return () => cancelAnimationFrame(animId);
-  }, [isOpen, isSpinning, availablePlayers.length]);
+  }, [isOpen, isSpinning, availableCount]);
 
-  // Extraer una bolilla
+  // Extraer una bolilla usando referencias sincronizadas
   const drawNextBall = () => {
-    if (isSpinning || availablePlayers.length === 0 || currentSlotIndex >= 16) return;
+    if (isSpinning) return;
+    const remaining = availablePlayersRef.current;
+    const currentSlot = currentSlotRef.current;
+
+    if (!remaining || remaining.length === 0 || currentSlot >= 16) {
+      setIsFinished(true);
+      setIsAuto(false);
+      return;
+    }
 
     setIsSpinning(true);
     soundPlayer?.playWhoosh();
 
     // Tiempo de giro suspense (1.2 segundos)
     setTimeout(() => {
-      // Elegir aleatoriamente el próximo jugador de la bolsa
-      const chosenIndex = Math.floor(Math.random() * availablePlayers.length);
-      const chosenPlayer = availablePlayers[chosenIndex];
+      const pool = availablePlayersRef.current;
+      if (!pool || pool.length === 0) {
+        setIsSpinning(false);
+        return;
+      }
 
-      // Determinar a qué cruce y posición va
-      const matchIndex = Math.floor(currentSlotIndex / 2);
-      const isSlotP1 = currentSlotIndex % 2 === 0;
+      // Elegir aleatoriamente el próximo jugador de la bolsa
+      const chosenIndex = Math.floor(Math.random() * pool.length);
+      const chosenPlayer = pool[chosenIndex];
+
+      // Quitar de la bolsa inmediatamente en el ref
+      const newPool = pool.filter((_, idx) => idx !== chosenIndex);
+      availablePlayersRef.current = newPool;
+      setAvailableCount(newPool.length);
+
+      const slotIdx = currentSlotRef.current;
+      const matchIndex = Math.floor(slotIdx / 2);
+      const isSlotP1 = slotIdx % 2 === 0;
 
       const ballData = {
-        number: 16 - availablePlayers.length + 1,
+        number: 16 - newPool.length,
         player: chosenPlayer,
         matchNumber: matchIndex + 1,
         slotName: isSlotP1 ? 'Local' : 'Visitante',
@@ -229,10 +249,6 @@ export default function BolilleroModal({
       setRevealedPlayer(chosenPlayer);
       setIsSpinning(false);
       soundPlayer?.playReveal();
-
-      // Quitar de la bolsa
-      const nextRemaining = availablePlayers.filter((_, idx) => idx !== chosenIndex);
-      setAvailablePlayers(nextRemaining);
 
       // Actualizar matches
       setMatches((prev) => {
@@ -245,42 +261,52 @@ export default function BolilleroModal({
         return copy;
       });
 
-      const nextSlot = currentSlotIndex + 1;
+      const nextSlot = slotIdx + 1;
+      currentSlotRef.current = nextSlot;
       setCurrentSlotIndex(nextSlot);
+
+      // Auto-scroll suave hacia la llave asignada
+      setTimeout(() => {
+        const targetCard = document.getElementById(`mini-match-${matchIndex + 1}`);
+        if (targetCard) {
+          targetCard.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+        }
+      }, 250);
 
       if (nextSlot >= 16) {
         setIsFinished(true);
         setIsAuto(false);
-        setTimeout(() => soundPlayer?.playFanfare(), 1200);
+        setTimeout(() => soundPlayer?.playFanfare(), 1500);
       }
     }, 1200);
   };
 
-  // Efecto del modo automático
+  // Efecto del modo automático: intervalo ampliado (+3 segundos solicitados por el usuario para disfrutar la foto)
   useEffect(() => {
     let timer;
     if (isAuto && !isSpinning && !isFinished && currentSlotIndex < 16) {
+      // 5.6 segundos en total (2.6s base + 3s solicitados)
       timer = setTimeout(() => {
         drawNextBall();
-      }, 2600);
+      }, 5600);
     }
     return () => clearTimeout(timer);
   }, [isAuto, isSpinning, isFinished, currentSlotIndex]);
 
   // Saltear animación y completar sorteo al instante
   const skipRemaining = () => {
-    if (isFinished || currentSlotIndex >= 16) return;
+    if (isFinished || currentSlotRef.current >= 16) return;
     setIsAuto(false);
     setIsSpinning(false);
 
-    const remaining = [...availablePlayers].sort(() => Math.random() - 0.5);
+    const pool = [...availablePlayersRef.current].sort(() => Math.random() - 0.5);
     const newMatches = [...matches];
     let rIdx = 0;
 
-    for (let slot = currentSlotIndex; slot < 16; slot++) {
+    for (let slot = currentSlotRef.current; slot < 16; slot++) {
       const matchIdx = Math.floor(slot / 2);
       const isP1 = slot % 2 === 0;
-      const player = remaining[rIdx++];
+      const player = pool[rIdx++];
       if (player) {
         if (isP1) {
           newMatches[matchIdx] = { ...newMatches[matchIdx], p1: player };
@@ -291,11 +317,11 @@ export default function BolilleroModal({
     }
 
     setMatches(newMatches);
-    setAvailablePlayers([]);
+    availablePlayersRef.current = [];
+    setAvailableCount(0);
+    currentSlotRef.current = 16;
     setCurrentSlotIndex(16);
     setIsFinished(true);
-    setExtractedBall(null);
-    setRevealedPlayer(null);
     soundPlayer?.playFanfare();
   };
 
@@ -359,7 +385,7 @@ export default function BolilleroModal({
 
             <div className="drum-status-badge">
               <span>Bolillas restantes: </span>
-              <strong>{availablePlayers.length} / 16</strong>
+              <strong>{availableCount} / 16</strong>
             </div>
 
             {/* Controles de Acción */}
@@ -412,7 +438,10 @@ export default function BolilleroModal({
           {/* Lado derecho: Tarjeta de Revelación del Participante Sorteado */}
           <div className="bolillero-reveal-stage">
             {revealedPlayer && extractedBall ? (
-              <div className="player-reveal-card fade-in">
+              <div
+                key={`reveal-card-${extractedBall.number}-${revealedPlayer.id}`}
+                className="player-reveal-card fade-in"
+              >
                 <div className="reveal-header">
                   <span className="ball-number-badge">BOLILLA #{extractedBall.number}</span>
                   <span className="slot-assigned-badge">{extractedBall.slotLabel}</span>
@@ -420,10 +449,23 @@ export default function BolilleroModal({
 
                 <div className="reveal-photo-wrapper">
                   {revealedPlayer.foto ? (
-                    <img src={revealedPlayer.foto} alt={revealedPlayer.nick} className="reveal-photo" />
-                  ) : (
-                    <div className="reveal-photo-placeholder">🎮</div>
-                  )}
+                    <img
+                      key={`img-${extractedBall.number}-${revealedPlayer.id}`}
+                      src={revealedPlayer.foto}
+                      alt={revealedPlayer.nick}
+                      className="reveal-photo"
+                      onError={(e) => {
+                        e.target.style.display = 'none';
+                        if (e.target.nextSibling) e.target.nextSibling.style.display = 'flex';
+                      }}
+                    />
+                  ) : null}
+                  <div
+                    className="reveal-photo-placeholder"
+                    style={{ display: revealedPlayer.foto ? 'none' : 'flex' }}
+                  >
+                    🎮
+                  </div>
                   <div className="reveal-glow-back"></div>
                 </div>
 
@@ -452,28 +494,35 @@ export default function BolilleroModal({
           </div>
         </div>
 
-        {/* Resumen de Cruces en tiempo real */}
+        {/* Resumen de Cruces en tiempo real con scroll e iluminación automática */}
         <div className="bolillero-bracket-preview">
           <div className="preview-header">
             <h3>LLAVES SORTEADAS ({matches.filter((m) => m.p1 && m.p2).length} / 8 DEFINIDAS)</h3>
           </div>
-          <div className="mini-matches-grid">
-            {matches.map((m, idx) => (
-              <div key={m.id} className="mini-match-card">
-                <div className="mini-match-title">LLAVE #{idx + 1}</div>
-                <div className="mini-match-teams">
-                  <div className={`mini-team ${m.p1 ? 'filled' : 'vacant'}`}>
-                    <span className="mini-role">L</span>
-                    <span className="mini-name">{m.p1 ? m.p1.nick : '—'}</span>
-                  </div>
-                  <div className="mini-vs">VS</div>
-                  <div className={`mini-team ${m.p2 ? 'filled' : 'vacant'}`}>
-                    <span className="mini-role">V</span>
-                    <span className="mini-name">{m.p2 ? m.p2.nick : '—'}</span>
+          <div className="mini-matches-grid" id="mini-matches-scroll-container">
+            {matches.map((m, idx) => {
+              const isTargetMatch = extractedBall && extractedBall.matchNumber === idx + 1;
+              return (
+                <div
+                  key={m.id}
+                  id={`mini-match-${idx + 1}`}
+                  className={`mini-match-card ${isTargetMatch ? 'flash-highlight' : ''}`}
+                >
+                  <div className="mini-match-title">LLAVE #{idx + 1}</div>
+                  <div className="mini-match-teams">
+                    <div className={`mini-team ${m.p1 ? 'filled' : 'vacant'}`}>
+                      <span className="mini-role">L</span>
+                      <span className="mini-name">{m.p1 ? m.p1.nick : '—'}</span>
+                    </div>
+                    <div className="mini-vs">VS</div>
+                    <div className={`mini-team ${m.p2 ? 'filled' : 'vacant'}`}>
+                      <span className="mini-role">V</span>
+                      <span className="mini-name">{m.p2 ? m.p2.nick : '—'}</span>
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
 

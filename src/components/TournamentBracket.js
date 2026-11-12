@@ -228,3 +228,4 @@ export default function TournamentBracket({ matches = [], newlyPlacedId = null, 
     </div>
   );
 }
+

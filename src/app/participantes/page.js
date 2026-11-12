@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import ThemeToggle from '@/components/ThemeToggle';
 import { supabase } from '@/lib/supabase';
+import { voteClasificado } from '../actions';
 import { getClasificadosConVotos, getDailyVoteBonus } from '@/lib/participantes';
 
 const TOTAL_SLOTS = 16;
@@ -85,8 +86,14 @@ export default function ParticipantesPage() {
           const merged = supaList.map(sp => {
             const lp = localMap.get(sp.id);
             const userVote = localVotes[sp.id] || { likes: 0, dislikes: 0 };
-            const baseLikes = lp ? (lp.base_likes || lp.likes) : (sp.likes || 25);
-            const baseDislikes = lp ? (lp.base_dislikes || lp.dislikes) : (sp.dislikes || 1);
+            let baseLikes = lp ? (lp.base_likes || lp.likes) : (sp.likes || 25);
+            let baseDislikes = lp ? (lp.base_dislikes || lp.dislikes) : (sp.dislikes || 1);
+
+            // Para CABRA (id 33), asegurar base de 88 likes y 4 dislikes
+            if (Number(sp.id) === 33) {
+              if (baseLikes < 88) baseLikes = 88;
+              if (baseDislikes < 4) baseDislikes = 4;
+            }
 
             // Determinar si la foto cambió en Supabase o mantenemos la local para ahorrar cuota
             let effectivePhoto = sp.foto || '';
@@ -133,46 +140,22 @@ export default function ParticipantesPage() {
     return () => observer.disconnect();
   }, [clasificados]);
 
-  const handleVote = (id, type) => {
+  const handleVote = async (id, type) => {
     try {
-      const now = Date.now();
-      const oneDayMs = 24 * 60 * 60 * 1000;
-      let logs = [];
-      try {
-        const savedLogs = localStorage.getItem('pes6_vote_timestamps');
-        if (savedLogs) logs = JSON.parse(savedLogs);
-      } catch (e) {
-        logs = [];
-      }
-
-      const recentVotes = logs.filter(timestamp => (now - timestamp) < oneDayMs);
-      if (recentVotes.length >= 2) {
-        showToast('Límite alcanzado: 2 votos por dispositivo cada 24hs.', 'warning');
+      const res = await voteClasificado(id, type);
+      if (res && res.error) {
+        showToast(res.error, 'warning');
         return;
       }
 
-      recentVotes.push(now);
-      localStorage.setItem('pes6_vote_timestamps', JSON.stringify(recentVotes));
-
-      let extraVotes = {};
-      try {
-        const savedExtra = localStorage.getItem('pes6_user_extra_votes');
-        if (savedExtra) extraVotes = JSON.parse(savedExtra);
-      } catch (e) {
-        extraVotes = {};
-      }
-
-      if (!extraVotes[id]) extraVotes[id] = { likes: 0, dislikes: 0 };
-      if (type === 'like') extraVotes[id].likes += 1;
-      else extraVotes[id].dislikes += 1;
-      localStorage.setItem('pes6_user_extra_votes', JSON.stringify(extraVotes));
+      showToast(type === 'like' ? '👍 Voto positivo registrado!' : '👎 Voto negativo registrado!', 'success');
 
       setClasificados(prev => prev.map(c => {
         if (c.id === id) {
           return {
             ...c,
-            likes: type === 'like' ? c.likes + 1 : c.likes,
-            dislikes: type === 'dislike' ? c.dislikes + 1 : c.dislikes
+            likes: type === 'like' ? (c.likes || 0) + 1 : c.likes,
+            dislikes: type === 'dislike' ? (c.dislikes || 0) + 1 : c.dislikes
           };
         }
         return c;
@@ -182,26 +165,14 @@ export default function ParticipantesPage() {
         if (prev && prev.id === id) {
           return {
             ...prev,
-            likes: type === 'like' ? prev.likes + 1 : prev.likes,
-            dislikes: type === 'dislike' ? prev.dislikes + 1 : prev.dislikes
+            likes: type === 'like' ? (prev.likes || 0) + 1 : prev.likes,
+            dislikes: type === 'dislike' ? (prev.dislikes || 0) + 1 : prev.dislikes
           };
         }
         return prev;
       });
-
-      showToast(type === 'like' ? '👍 Voto positivo registrado!' : '👎 Voto negativo registrado!', 'success');
     } catch (e) {
-      setClasificados(prev => prev.map(c => {
-        if (c.id === id) {
-          return {
-            ...c,
-            likes: type === 'like' ? c.likes + 1 : c.likes,
-            dislikes: type === 'dislike' ? c.dislikes + 1 : c.dislikes
-          };
-        }
-        return c;
-      }));
-      showToast(type === 'like' ? '👍 Voto positivo registrado!' : '👎 Voto negativo registrado!', 'success');
+      showToast('Ocurrió un error al registrar el voto.', 'warning');
     }
   };
 
