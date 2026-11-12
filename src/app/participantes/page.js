@@ -88,10 +88,20 @@ export default function ParticipantesPage() {
             const baseLikes = lp ? (lp.base_likes || lp.likes) : (sp.likes || 25);
             const baseDislikes = lp ? (lp.base_dislikes || lp.dislikes) : (sp.dislikes || 1);
 
+            // Determinar si la foto cambió en Supabase o mantenemos la local para ahorrar cuota
+            let effectivePhoto = sp.foto || '';
+            if (lp && lp.foto) {
+              const localFilename = lp.foto.split('/').pop();
+              if (sp.foto && sp.foto.includes(localFilename)) {
+                effectivePhoto = lp.foto; // Misma imagen -> usar local (0 cuota Supabase)
+              } else if (sp.foto) {
+                effectivePhoto = sp.foto; // Nueva imagen subida por admin -> usar la nueva
+              }
+            }
+
             return {
               ...sp,
-              // Mantener ruta local si la imagen ya fue descargada a public
-              foto: (lp && lp.foto) ? lp.foto : sp.foto,
+              foto: effectivePhoto,
               likes: baseLikes + likesBonus + (userVote.likes || 0),
               dislikes: baseDislikes + dislikesBonus + (userVote.dislikes || 0)
             };
