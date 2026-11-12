@@ -218,6 +218,15 @@ export default function Home() {
             <div className="portada-btn-arrow">→</div>
           </Link>
 
+          <Link href="/llaves" className="portada-btn" style={{ borderColor: 'rgba(255, 215, 0, 0.4)' }}>
+            <div className="portada-btn-icon">⚡</div>
+            <div className="portada-btn-text">
+              <span className="portada-btn-title" style={{ color: 'var(--gold)' }}>LLAVES DEL TORNEO</span>
+              <span className="portada-btn-desc">Mirá el cuadro y los cruces de Octavos</span>
+            </div>
+            <div className="portada-btn-arrow">→</div>
+          </Link>
+
           <Link href="/clasificar" className="portada-btn">
             <div className="portada-btn-icon">🏆</div>
             <div className="portada-btn-text">
@@ -298,6 +307,39 @@ export default function Home() {
             </div>
           ) : (
             <div className="admin-content">
+              {/* Acceso al Sorteo de Llaves */}
+              <div style={{ background: 'linear-gradient(135deg, rgba(255, 215, 0, 0.12), rgba(232, 0, 61, 0.12))', border: '1px solid var(--gold)', padding: '14px', borderRadius: '8px', marginBottom: '18px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
+                <div>
+                  <div style={{ fontSize: '0.9rem', fontWeight: 900, color: 'var(--gold)', letterSpacing: '1px', textTransform: 'uppercase' }}>
+                    🎲 Sorteo de Llaves (Octavos de Final)
+                  </div>
+                  <div style={{ fontSize: '0.75rem', color: 'var(--grey-light)', marginTop: '2px' }}>
+                    Simulá el bolillero con animación 3D o realizá el sorteo definitivo.
+                  </div>
+                </div>
+                <Link
+                  href="/llaves?admin=true"
+                  style={{
+                    background: 'var(--gold)',
+                    color: '#000',
+                    fontWeight: 900,
+                    fontSize: '0.8rem',
+                    padding: '8px 14px',
+                    borderRadius: '6px',
+                    textDecoration: 'none',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '4px'
+                  }}
+                  onClick={() => {
+                    sessionStorage.setItem('pes6_admin_logged', 'true');
+                    sessionStorage.setItem('pes6_admin_pass', adminPass);
+                  }}
+                >
+                  Abrir Bolillero →
+                </Link>
+              </div>
+
               <div style={{ fontSize: '0.8rem', fontWeight: 'bold', color: 'var(--gold)', letterSpacing: '1px', textTransform: 'uppercase', marginBottom: '10px' }}>
                 Gestión de Participantes ({clasificados.length}/{TOTAL_SLOTS})
               </div>

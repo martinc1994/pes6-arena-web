@@ -27,6 +27,7 @@ export default function EventoPage() {
           </Link>
           <ul className="nav-links">
             <li><Link href="/participantes">Participantes</Link></li>
+            <li><Link href="/llaves">Llaves</Link></li>
             <li><Link href="/clasificar">Clasificar</Link></li>
           </ul>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginLeft: 'auto' }}>
@@ -252,6 +253,7 @@ export default function EventoPage() {
           <Link href="/" style={{color:'var(--grey)', textDecoration:'none', fontSize:'0.85rem'}}>Inicio</Link>
           <Link href="/evento" style={{color:'var(--gold)', textDecoration:'none', fontSize:'0.85rem'}}>Evento</Link>
           <Link href="/participantes" style={{color:'var(--grey)', textDecoration:'none', fontSize:'0.85rem'}}>Participantes</Link>
+          <Link href="/llaves" style={{color:'var(--grey)', textDecoration:'none', fontSize:'0.85rem'}}>Llaves</Link>
           <Link href="/clasificar" style={{color:'var(--grey)', textDecoration:'none', fontSize:'0.85rem'}}>Clasificar</Link>
         </div>
         <div style={{marginTop: '2rem', borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: '1.5rem'}}>

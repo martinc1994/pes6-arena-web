@@ -65,3 +65,72 @@ export async function voteClasificado(id, type) {
     return { success: true };
   }
 }
+
+export async function saveSorteoDefinitivo(password, bracketData) {
+  if (!verifyPassword(password)) return { error: "Contraseña incorrecta" };
+  try {
+    if (!supabase) return { error: "Supabase no está configurado" };
+
+    const payload = {
+      id: 1,
+      nombre: 'PES6 ARENA 2026 - Gran Final',
+      fecha: '2026-11-22',
+      partidos: bracketData
+    };
+
+    const { data, error } = await supabase
+      .from('torneos')
+      .upsert(payload, { onConflict: 'id' })
+      .select();
+
+    if (error) {
+      console.warn("Error en upsert torneos, probando update/insert:", error);
+      const { data: updateData, error: updateErr } = await supabase
+        .from('torneos')
+        .update({ partidos: bracketData })
+        .eq('id', 1)
+        .select();
+
+      if (updateErr || !updateData || updateData.length === 0) {
+        const { data: insertData, error: insertErr } = await supabase
+          .from('torneos')
+          .insert(payload)
+          .select();
+        if (insertErr) return { error: "Error en base de datos: " + insertErr.message };
+        return { success: true, data: insertData };
+      }
+      return { success: true, data: updateData };
+    }
+
+    return { success: true, data };
+  } catch (err) {
+    return { error: err.message || "Error al guardar el sorteo definitivo" };
+  }
+}
+
+export async function getSorteoDefinitivo() {
+  try {
+    if (!supabase) return null;
+    const { data, error } = await supabase
+      .from('torneos')
+      .select('*')
+      .order('id', { ascending: false })
+      .limit(1);
+
+    if (error || !data || data.length === 0) return null;
+    return data[0]?.partidos || null;
+  } catch (err) {
+    return null;
+  }
+}
+
+export async function resetSorteoDefinitivo(password) {
+  if (!verifyPassword(password)) return { error: "Contraseña incorrecta" };
+  try {
+    if (!supabase) return { success: true };
+    await supabase.from('torneos').delete().neq('id', 0);
+    return { success: true };
+  } catch (err) {
+    return { error: err.message };
+  }
+}
