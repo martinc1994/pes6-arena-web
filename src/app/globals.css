@@ -2632,3 +2632,32 @@ section { padding: 6rem 2rem; }
   transform: scale(1.06);
   z-index: 10;
 }
+
+/* Estilos para Cabezas de Serie */
+.seeded-header-badge {
+  font-size: 0.7rem;
+  font-weight: 900;
+  color: var(--gold);
+  background: rgba(255, 215, 0, 0.15);
+  border: 1px solid var(--gold);
+  padding: 2px 8px;
+  border-radius: 4px;
+  letter-spacing: 1px;
+}
+
+.reveal-photo-wrapper.seeded-glow {
+  border-color: var(--gold) !important;
+  box-shadow: 0 0 35px rgba(255, 215, 0, 0.7), inset 0 0 15px rgba(255, 215, 0, 0.3) !important;
+}
+
+.reveal-player-badge.cabeza-serie {
+  background: rgba(255, 215, 0, 0.2) !important;
+  border: 1px solid var(--gold) !important;
+  color: var(--gold) !important;
+  font-weight: 900 !important;
+  letter-spacing: 1px !important;
+}
+
+.bracket-seeded-player {
+  border-left: 3px solid var(--gold) !important;
+}

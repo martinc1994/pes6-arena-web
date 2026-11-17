@@ -3,6 +3,32 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { soundPlayer } from '@/lib/soundEffects';
 
+const SEEDED_IDS = [24, 25, 27, 28, 30, 33];
+// Cubilla (24), Benja Calero (25), El Tío Bock (27), Maxi (28), Facu Codeso (30), Cabra (33)
+
+export const isSeededPlayer = (p) => {
+  if (!p) return false;
+  if (SEEDED_IDS.includes(Number(p.id))) return true;
+  const name = (p.nick || '').toLowerCase();
+  return (
+    name.includes('benja') ||
+    name.includes('cubilla') ||
+    name.includes('codeso') ||
+    name.includes('maxi') ||
+    name.includes('bock') ||
+    name.includes('cabra')
+  );
+};
+
+function shuffle(arr) {
+  const copy = [...arr];
+  for (let i = copy.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [copy[i], copy[j]] = [copy[j], copy[i]];
+  }
+  return copy;
+}
+
 export default function BolilleroModal({
   isOpen,
   onClose,
@@ -11,7 +37,7 @@ export default function BolilleroModal({
   onConfirmDefinitive = null
 }) {
   const canvasRef = useRef(null);
-  const availablePlayersRef = useRef([]);
+  const plannedSlotsRef = useRef([]);
   const currentSlotRef = useRef(0);
 
   const [availableCount, setAvailableCount] = useState(16);
@@ -24,9 +50,9 @@ export default function BolilleroModal({
     }))
   );
 
-  const [currentSlotIndex, setCurrentSlotIndex] = useState(0); // 0 a 15
+  const [currentSlotIndex, setCurrentSlotIndex] = useState(0); // 0 a 16
   const [isSpinning, setIsSpinning] = useState(false);
-  const [extractedBall, setExtractedBall] = useState(null); // { number, player, targetSlot }
+  const [extractedBall, setExtractedBall] = useState(null);
   const [revealedPlayer, setRevealedPlayer] = useState(null);
   const [isAuto, setIsAuto] = useState(false);
   const [isFinished, setIsFinished] = useState(false);
@@ -34,7 +60,7 @@ export default function BolilleroModal({
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [soundEnabled, setSoundEnabled] = useState(true);
 
-  // Inicializar o reiniciar bolillero
+  // Inicializar o reiniciar bolillero con la regla de Cabezas de Serie en llaves distintas
   const initDraw = () => {
     setIsFinished(false);
     setIsAuto(false);
@@ -45,12 +71,35 @@ export default function BolilleroModal({
     setRevealedPlayer(null);
     setShowConfirmModal(false);
 
-    // Mezclar aleatoriamente todos los participantes
     const source = allPlayers && allPlayers.length > 0 ? allPlayers : [];
-    const shuffled = [...source].sort(() => Math.random() - 0.5);
+    const seeded = source.filter((p) => isSeededPlayer(p));
+    const nonSeeded = source.filter((p) => !isSeededPlayer(p));
 
-    availablePlayersRef.current = shuffled;
-    setAvailableCount(shuffled.length);
+    // 1. Elegir 6 llaves distintas al azar entre las 8 (0 a 7) para los 6 cabezas de serie
+    const matchIndices = [0, 1, 2, 3, 4, 5, 6, 7];
+    const chosenMatches = shuffle(matchIndices).slice(0, 6);
+    const shuffledSeeded = shuffle(seeded);
+
+    const planned = new Array(16).fill(null);
+
+    // 2. Ubicar a cada cabeza de serie en una llave distinta (Local o Visitante al azar)
+    chosenMatches.forEach((mIdx, i) => {
+      const isVisitante = Math.random() < 0.5;
+      const slot = mIdx * 2 + (isVisitante ? 1 : 0);
+      planned[slot] = shuffledSeeded[i];
+    });
+
+    // 3. Rellenar los 10 lugares restantes con los no cabezas de serie
+    const shuffledNonSeeded = shuffle(nonSeeded);
+    let nonIdx = 0;
+    for (let s = 0; s < 16; s++) {
+      if (!planned[s]) {
+        planned[s] = shuffledNonSeeded[nonIdx++];
+      }
+    }
+
+    plannedSlotsRef.current = planned;
+    setAvailableCount(16);
 
     setMatches(
       Array.from({ length: 8 }, (_, i) => ({
@@ -66,7 +115,7 @@ export default function BolilleroModal({
     if (isOpen) {
       initDraw();
     }
-  }, [isOpen, allPlayers]);
+  }, [isOpen]);
 
   // Canvas Physics para las bolillas dentro del bolillero
   useEffect(() => {
@@ -82,7 +131,6 @@ export default function BolilleroModal({
     const centerY = height / 2;
     const radius = 125;
 
-    // Colores PES clásicos para las bolillas
     const BALL_COLORS = ['#FFD700', '#E8003D', '#00D2FF', '#FFFFFF', '#FFA500', '#00FF88'];
 
     const count = Math.max(availableCount, 1);
@@ -105,14 +153,13 @@ export default function BolilleroModal({
     const loop = () => {
       ctx.clearRect(0, 0, width, height);
 
-      // 1. Dibujar esfera de cristal (bolillero exterior)
+      // 1. Esfera de cristal
       ctx.save();
       ctx.beginPath();
       ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
       ctx.fillStyle = 'rgba(16, 20, 35, 0.65)';
       ctx.fill();
 
-      // Gradiente de cristal y reflejo
       const grad = ctx.createRadialGradient(centerX - 35, centerY - 45, 10, centerX, centerY, radius);
       grad.addColorStop(0, 'rgba(255, 255, 255, 0.28)');
       grad.addColorStop(0.5, 'rgba(255, 215, 0, 0.08)');
@@ -120,7 +167,6 @@ export default function BolilleroModal({
       ctx.fillStyle = grad;
       ctx.fill();
 
-      // Borde dorado neón
       ctx.lineWidth = 4;
       ctx.strokeStyle = isSpinning ? '#FFD700' : 'rgba(255, 215, 0, 0.4)';
       ctx.shadowColor = '#FFD700';
@@ -128,7 +174,7 @@ export default function BolilleroModal({
       ctx.stroke();
       ctx.restore();
 
-      // 2. Anillo metálico / Soporte del bolillero
+      // 2. Anillo metálico
       ctx.save();
       ctx.beginPath();
       ctx.arc(centerX, centerY, radius + 8, Math.PI * 0.15, Math.PI * 0.85);
@@ -201,13 +247,13 @@ export default function BolilleroModal({
     return () => cancelAnimationFrame(animId);
   }, [isOpen, isSpinning, availableCount]);
 
-  // Extraer una bolilla usando referencias sincronizadas
+  // Extraer una bolilla
   const drawNextBall = () => {
     if (isSpinning) return;
-    const remaining = availablePlayersRef.current;
     const currentSlot = currentSlotRef.current;
+    const planned = plannedSlotsRef.current;
 
-    if (!remaining || remaining.length === 0 || currentSlot >= 16) {
+    if (!planned || currentSlot >= 16) {
       setIsFinished(true);
       setIsAuto(false);
       return;
@@ -216,35 +262,29 @@ export default function BolilleroModal({
     setIsSpinning(true);
     soundPlayer?.playWhoosh();
 
-    // Tiempo de giro suspense (1.2 segundos)
+    // Tiempo de giro suspense (1.2 segundos). Nota: la tarjeta anterior permanece visible mientras gira el tambor.
     setTimeout(() => {
-      const pool = availablePlayersRef.current;
-      if (!pool || pool.length === 0) {
+      const slotIdx = currentSlotRef.current;
+      if (slotIdx >= 16) {
         setIsSpinning(false);
         return;
       }
 
-      // Elegir aleatoriamente el próximo jugador de la bolsa
-      const chosenIndex = Math.floor(Math.random() * pool.length);
-      const chosenPlayer = pool[chosenIndex];
-
-      // Quitar de la bolsa inmediatamente en el ref
-      const newPool = pool.filter((_, idx) => idx !== chosenIndex);
-      availablePlayersRef.current = newPool;
-      setAvailableCount(newPool.length);
-
-      const slotIdx = currentSlotRef.current;
+      const chosenPlayer = plannedSlotsRef.current[slotIdx];
       const matchIndex = Math.floor(slotIdx / 2);
       const isSlotP1 = slotIdx % 2 === 0;
+      const isSeeded = isSeededPlayer(chosenPlayer);
 
       const ballData = {
-        number: 16 - newPool.length,
+        number: slotIdx + 1,
         player: chosenPlayer,
         matchNumber: matchIndex + 1,
         slotName: isSlotP1 ? 'Local' : 'Visitante',
-        slotLabel: `Llave #${matchIndex + 1} (${isSlotP1 ? 'Local' : 'Visitante'})`
+        slotLabel: `Llave #${matchIndex + 1} (${isSlotP1 ? 'Local' : 'Visitante'})`,
+        isSeeded
       };
 
+      // Establecer tarjeta de revelación (se mantendrá en pantalla hasta que se sortee la próxima bolilla)
       setExtractedBall(ballData);
       setRevealedPlayer(chosenPlayer);
       setIsSpinning(false);
@@ -264,14 +304,18 @@ export default function BolilleroModal({
       const nextSlot = slotIdx + 1;
       currentSlotRef.current = nextSlot;
       setCurrentSlotIndex(nextSlot);
+      setAvailableCount(16 - nextSlot);
 
-      // Auto-scroll suave hacia la llave asignada
+      // Desplazamiento horizontal EXCLUSIVO dentro de la grilla de llaves (SIN scrollear la ventana ni el modal)
       setTimeout(() => {
+        const container = document.getElementById('mini-matches-scroll-container');
         const targetCard = document.getElementById(`mini-match-${matchIndex + 1}`);
-        if (targetCard) {
-          targetCard.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+        if (container && targetCard) {
+          const cRect = container.getBoundingClientRect();
+          const tRect = targetCard.getBoundingClientRect();
+          container.scrollLeft += (tRect.left - cRect.left) - (cRect.width / 2) + (tRect.width / 2);
         }
-      }, 250);
+      }, 150);
 
       if (nextSlot >= 16) {
         setIsFinished(true);
@@ -281,14 +325,13 @@ export default function BolilleroModal({
     }, 1200);
   };
 
-  // Efecto del modo automático: intervalo ampliado (+3 segundos solicitados por el usuario para disfrutar la foto)
+  // Modo automático: tiempo extendido entre bolillas para disfrutar la foto y los detalles
   useEffect(() => {
     let timer;
     if (isAuto && !isSpinning && !isFinished && currentSlotIndex < 16) {
-      // 5.6 segundos en total (2.6s base + 3s solicitados)
       timer = setTimeout(() => {
         drawNextBall();
-      }, 5600);
+      }, 5500);
     }
     return () => clearTimeout(timer);
   }, [isAuto, isSpinning, isFinished, currentSlotIndex]);
@@ -299,14 +342,13 @@ export default function BolilleroModal({
     setIsAuto(false);
     setIsSpinning(false);
 
-    const pool = [...availablePlayersRef.current].sort(() => Math.random() - 0.5);
+    const planned = plannedSlotsRef.current;
     const newMatches = [...matches];
-    let rIdx = 0;
 
     for (let slot = currentSlotRef.current; slot < 16; slot++) {
       const matchIdx = Math.floor(slot / 2);
       const isP1 = slot % 2 === 0;
-      const player = pool[rIdx++];
+      const player = planned[slot];
       if (player) {
         if (isP1) {
           newMatches[matchIdx] = { ...newMatches[matchIdx], p1: player };
@@ -316,11 +358,21 @@ export default function BolilleroModal({
       }
     }
 
+    const lastPlayer = planned[15];
+    setExtractedBall({
+      number: 16,
+      player: lastPlayer,
+      matchNumber: 8,
+      slotName: 'Visitante',
+      slotLabel: 'Llave #8 (Visitante)',
+      isSeeded: isSeededPlayer(lastPlayer)
+    });
+    setRevealedPlayer(lastPlayer);
+
     setMatches(newMatches);
-    availablePlayersRef.current = [];
-    setAvailableCount(0);
     currentSlotRef.current = 16;
     setCurrentSlotIndex(16);
+    setAvailableCount(0);
     setIsFinished(true);
     soundPlayer?.playFanfare();
   };
@@ -354,6 +406,8 @@ export default function BolilleroModal({
               {isTestMode
                 ? 'Sorteo de práctica. No modifica la web pública.'
                 : 'Sorteo oficial para el evento del 22 de Noviembre.'}
+              {' · '}
+              <strong style={{ color: 'var(--gold)' }}>6 Cabezas de Serie en llaves distintas</strong>
             </p>
           </div>
 
@@ -444,10 +498,14 @@ export default function BolilleroModal({
               >
                 <div className="reveal-header">
                   <span className="ball-number-badge">BOLILLA #{extractedBall.number}</span>
-                  <span className="slot-assigned-badge">{extractedBall.slotLabel}</span>
+                  {extractedBall.isSeeded ? (
+                    <span className="seeded-header-badge">⭐ CABEZA DE SERIE</span>
+                  ) : (
+                    <span className="slot-assigned-badge">{extractedBall.slotLabel}</span>
+                  )}
                 </div>
 
-                <div className="reveal-photo-wrapper">
+                <div className={`reveal-photo-wrapper ${extractedBall.isSeeded ? 'seeded-glow' : ''}`}>
                   {revealedPlayer.foto ? (
                     <img
                       key={`img-${extractedBall.number}-${revealedPlayer.id}`}
@@ -470,12 +528,22 @@ export default function BolilleroModal({
                 </div>
 
                 <div className="reveal-player-info">
-                  <div className="reveal-player-nick">{revealedPlayer.nick}</div>
+                  <div className="reveal-player-nick">
+                    {revealedPlayer.nick}
+                    {extractedBall.isSeeded && <span style={{ marginLeft: '6px', color: 'var(--gold)', fontSize: '1.2rem' }}>⭐</span>}
+                  </div>
                   <div className="reveal-player-team">
                     ⚽ {revealedPlayer.equipo || 'Equipo por definir'}
                   </div>
-                  <div className="reveal-player-badge">
-                    {revealedPlayer.tipo === 'influencer' ? '🎙️ INFLUENCER CONFIRMADO' : '🏆 CAMPEÓN CLASIFICADO'}
+                  <div style={{ display: 'flex', gap: '6px', justifyContent: 'center', marginTop: '8px' }}>
+                    {extractedBall.isSeeded && (
+                      <span className="reveal-player-badge cabeza-serie">
+                        ⭐ CABEZA DE SERIE
+                      </span>
+                    )}
+                    <span className="reveal-player-badge">
+                      {revealedPlayer.tipo === 'influencer' ? '🎙️ INFLUENCER CONFIRMADO' : '🏆 CAMPEÓN CLASIFICADO'}
+                    </span>
                   </div>
                 </div>
 
@@ -512,12 +580,18 @@ export default function BolilleroModal({
                   <div className="mini-match-teams">
                     <div className={`mini-team ${m.p1 ? 'filled' : 'vacant'}`}>
                       <span className="mini-role">L</span>
-                      <span className="mini-name">{m.p1 ? m.p1.nick : '—'}</span>
+                      <span className="mini-name">
+                        {m.p1 ? m.p1.nick : '—'}
+                        {m.p1 && isSeededPlayer(m.p1) && ' ⭐'}
+                      </span>
                     </div>
                     <div className="mini-vs">VS</div>
                     <div className={`mini-team ${m.p2 ? 'filled' : 'vacant'}`}>
                       <span className="mini-role">V</span>
-                      <span className="mini-name">{m.p2 ? m.p2.nick : '—'}</span>
+                      <span className="mini-name">
+                        {m.p2 ? m.p2.nick : '—'}
+                        {m.p2 && isSeededPlayer(m.p2) && ' ⭐'}
+                      </span>
                     </div>
                   </div>
                 </div>
