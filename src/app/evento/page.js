@@ -28,7 +28,6 @@ export default function EventoPage() {
           <ul className="nav-links">
             <li><Link href="/participantes">Participantes</Link></li>
             <li><Link href="/llaves">Llaves</Link></li>
-            <li><Link href="/clasificar">Clasificar</Link></li>
           </ul>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginLeft: 'auto' }}>
             <ThemeToggle />
@@ -50,9 +49,20 @@ export default function EventoPage() {
             <span className="label-line"></span>
           </div>
           <h1 className="section-title centered">La Pasión del PES<br /><em>como nunca antes</em></h1>
-          <p className="hero-sub">📅 Domingo 22 de Noviembre · 📍 Microestadio de Garín (Blvd. Pres. Perón 450)</p>
-          <div style={{ marginTop: '1.25rem', display: 'inline-block', background: 'rgba(255, 215, 0, 0.12)', border: '1px solid var(--gold)', padding: '0.6rem 1.5rem', borderRadius: '50px', fontWeight: 'bold', color: 'var(--gold)', letterSpacing: '0.5px' }}>
-            🎟️ ENTRADA: 1 Alimento No Perecedero
+          <p className="hero-sub">📅 Domingo 22 de Noviembre · Inicia 13:00 HS · 📍 Microestadio de Garín</p>
+          <div style={{ marginTop: '1.25rem', display: 'flex', gap: '0.85rem', justifyContent: 'center', flexWrap: 'wrap', alignItems: 'center' }}>
+            <a
+              href="https://maps.app.goo.gl/xgT5NWWxgguvCuZa7"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="btn-google-maps-hero"
+            >
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+              <span>CÓMO LLEGAR (GOOGLE MAPS)</span>
+            </a>
+            <div style={{ background: 'rgba(255, 215, 0, 0.12)', border: '1px solid var(--gold)', padding: '0.65rem 1.5rem', borderRadius: '50px', fontWeight: 'bold', color: 'var(--gold)', letterSpacing: '0.5px' }}>
+              🎟️ ENTRADA: 1 Alimento No Perecedero
+            </div>
           </div>
         </div>
       </section>
@@ -133,7 +143,20 @@ export default function EventoPage() {
             <ul className="evento-features">
               <li className="fade-in">
                 <span className="feat-icon">📍</span>
-                <div><strong>Ubicación Exacta</strong><br />Microestadio de Garín (Boulevard Presidente Perón 450, Garín)</div>
+                <div>
+                  <strong>Ubicación Exacta</strong><br />
+                  Microestadio de Garín (Boulevard Presidente Perón 450, Garín)
+                  <div>
+                    <a
+                      href="https://maps.app.goo.gl/xgT5NWWxgguvCuZa7"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="btn-google-maps-link"
+                    >
+                      📍 Abrir en Google Maps →
+                    </a>
+                  </div>
+                </div>
               </li>
               <li className="fade-in">
                 <span className="feat-icon">🎟️</span>
@@ -152,74 +175,7 @@ export default function EventoPage() {
         </div>
       </section>
 
-      {/* 5. Cómo Participar o Clasificar */}
-      <section className="section-experiencia" style={{ background: 'var(--black2)', borderTop: '1px solid rgba(255,255,255,0.05)' }}>
-        <div className="section-label">
-          <span className="label-line"></span>
-          <span className="label-text">CLASIFICACIÓN</span>
-          <span className="label-line"></span>
-        </div>
-        <h2 className="section-title centered">¿Cómo participar<br /><em>o clasificar?</em></h2>
-        <p className="section-sub centered">El PES ARENA reúne a los campeones de nuestros torneos clasificatorios e invitados especiales.</p>
-
-        <div className="experiencia-grid" style={{ marginTop: '2.5rem' }}>
-          {/* Tarjeta Jugadores */}
-          <div className="experiencia-card fade-in" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
-            <div>
-              <div className="experiencia-icon">⚽</div>
-              <h3>Torneos Clasificatorios</h3>
-              <p style={{ marginBottom: '1rem' }}>
-                Durante el año realizamos <strong>más de 10 torneos callejeros clasificatorios</strong>, donde los campeones aseguran su cupo para el gran PES ARENA.
-              </p>
-              <p style={{ fontSize: '0.88rem', color: 'var(--grey-light)', lineHeight: '1.6' }}>
-                <strong>¿Querés postularte?</strong> Mandanos un video o mensaje a Instagram contándonos tu historia, nivel y ganas de competir.
-              </p>
-            </div>
-            <div style={{ marginTop: '1.5rem', display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
-              <a href="https://www.instagram.com/valenfulvo" target="_blank" rel="noopener noreferrer" className="btn-instagram" style={{ flex: 1, padding: '0.6rem 0.8rem', fontSize: '0.78rem', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '6px', borderRadius: '8px' }}>
-                @Valenfulvo
-              </a>
-              <a href="https://www.instagram.com/pes6arena" target="_blank" rel="noopener noreferrer" className="btn-instagram" style={{ flex: 1, padding: '0.6rem 0.8rem', fontSize: '0.78rem', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '6px', borderRadius: '8px' }}>
-                @pes6arena
-              </a>
-            </div>
-          </div>
-
-          {/* Tarjeta Influencers */}
-          <div className="experiencia-card fade-in" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
-            <div>
-              <div className="experiencia-icon">⭐</div>
-              <h3>Creadores & Influencers</h3>
-              <p style={{ marginBottom: '1rem' }}>
-                Buscamos sumar creadores de contenido que compartan la pasión por los videojuegos, el fútbol y la cultura gamer.
-              </p>
-              <p style={{ fontSize: '0.88rem', color: 'var(--grey-light)', lineHeight: '1.6' }}>
-                <strong>Lugares limitados:</strong> Mandanos un DM a Instagram contando quién sos, qué contenido hacés y por qué querés ser parte. <em>(No es inscripción, es invitación)</em>.
-              </p>
-            </div>
-            <div style={{ marginTop: '1.5rem', display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
-              <a href="https://www.instagram.com/valenfulvo" target="_blank" rel="noopener noreferrer" className="btn-instagram clasificar-cta-influencer" style={{ flex: 1, padding: '0.6rem 0.8rem', fontSize: '0.78rem', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '6px', borderRadius: '8px' }}>
-                DM @Valenfulvo
-              </a>
-              <a href="https://www.instagram.com/pes6arena" target="_blank" rel="noopener noreferrer" className="btn-instagram clasificar-cta-influencer" style={{ flex: 1, padding: '0.6rem 0.8rem', fontSize: '0.78rem', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '6px', borderRadius: '8px' }}>
-                DM @pes6arena
-              </a>
-            </div>
-          </div>
-        </div>
-
-        {/* Banner Oportunidad Anual */}
-        <div style={{ maxWidth: '800px', margin: '3rem auto 0', padding: '1.5rem 2rem', background: 'rgba(255,215,0,0.04)', border: '1px solid rgba(255,215,0,0.18)', borderRadius: '12px', textAlign: 'center' }} className="fade-in">
-          <h4 style={{ color: 'var(--gold)', fontFamily: "'Bebas Neue', sans-serif", fontSize: '1.4rem', letterSpacing: '1px', marginBottom: '0.5rem' }}>
-            🏆 ¿Y si este año ya no hay cupos?
-          </h4>
-          <p style={{ fontSize: '0.9rem', color: 'var(--grey-light)', lineHeight: '1.6', margin: 0 }}>
-            ¡No te preocupes! Los torneos clasificatorios y el PES ARENA son un evento anual. Si no llegaste a esta edición, vas a poder buscar tu lugar el próximo año. <strong style={{ color: 'var(--white)' }}>+10 torneos por año, 1 gran PES ARENA y una nueva oportunidad cada año.</strong>
-          </p>
-        </div>
-      </section>
-
-      {/* 6. Galería del estadio */}
+      {/* Galería del estadio */}
       <section className="section-galeria">
         <div className="section-label">
           <span className="label-line"></span>
@@ -241,6 +197,17 @@ export default function EventoPage() {
             <div className="galeria-caption">Complejo Deportivo</div>
           </div>
         </div>
+        <div style={{ textAlign: 'center', marginTop: '2.5rem' }}>
+          <a
+            href="https://maps.app.goo.gl/xgT5NWWxgguvCuZa7"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="btn-google-maps-hero"
+          >
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+            <span>VER CÓMO LLEGAR EN GOOGLE MAPS →</span>
+          </a>
+        </div>
       </section>
 
       <footer className="footer" style={{background:'var(--black2)', padding:'3rem 2rem', textAlign:'center', borderTop:'1px solid rgba(255,255,255,0.05)'}}>
@@ -254,7 +221,6 @@ export default function EventoPage() {
           <Link href="/evento" style={{color:'var(--gold)', textDecoration:'none', fontSize:'0.85rem'}}>Evento</Link>
           <Link href="/participantes" style={{color:'var(--grey)', textDecoration:'none', fontSize:'0.85rem'}}>Participantes</Link>
           <Link href="/llaves" style={{color:'var(--grey)', textDecoration:'none', fontSize:'0.85rem'}}>Llaves</Link>
-          <Link href="/clasificar" style={{color:'var(--grey)', textDecoration:'none', fontSize:'0.85rem'}}>Clasificar</Link>
         </div>
         <div style={{marginTop: '2rem', borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: '1.5rem'}}>
           <a href="https://wa.me/543816232650?text=Hola%20Mart%C3%ADn!%20Vi%20tu%20trabajo%20en%20la%20p%C3%A1gina%20de%20ValenFulvo%20y%20me%20gustar%C3%ADa%20consultar%20por%20tus%20servicios%20de%20desarrollo." target="_blank" rel="noopener noreferrer" style={{color: 'var(--grey)', textDecoration: 'none', fontSize: '0.85rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px'}}>

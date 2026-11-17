@@ -198,7 +198,6 @@ export default function ParticipantesPage() {
             <li><Link href="/evento">Evento</Link></li>
             <li><Link href="/participantes" style={{ color: 'var(--gold)' }}>Participantes</Link></li>
             <li><Link href="/llaves">Llaves</Link></li>
-            <li><Link href="/clasificar">Clasificar</Link></li>
           </ul>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginLeft: 'auto' }}>
             <ThemeToggle />
@@ -283,7 +282,6 @@ export default function ParticipantesPage() {
           <Link href="/evento" style={{ color: 'var(--grey)', textDecoration: 'none', fontSize: '0.85rem' }}>Evento</Link>
           <Link href="/participantes" style={{ color: 'var(--gold)', textDecoration: 'none', fontSize: '0.85rem' }}>Participantes</Link>
           <Link href="/llaves" style={{ color: 'var(--grey)', textDecoration: 'none', fontSize: '0.85rem' }}>Llaves</Link>
-          <Link href="/clasificar" style={{ color: 'var(--grey)', textDecoration: 'none', fontSize: '0.85rem' }}>Clasificar</Link>
         </div>
         <div style={{ marginTop: '2rem', borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: '1.5rem' }}>
           <a href="https://wa.me/543816232650?text=Hola%20Mart%C3%ADn!%20Vi%20tu%20trabajo%20en%20la%20p%C3%A1gina%20de%20ValenFulvo%20y%20me%20gustar%C3%ADa%20consultar%20por%20tus%20servicios%20de%20desarrollo." target="_blank" rel="noopener noreferrer" style={{ color: 'var(--grey)', textDecoration: 'none', fontSize: '0.85rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>

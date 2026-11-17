@@ -2663,3 +2663,372 @@ section { padding: 6rem 2rem; }
 .bracket-seeded-player {
   border-left: 3px solid var(--gold) !important;
 }
+
+/* ---- KICK STREAM BANNER ---- */
+.kick-banner-wrapper {
+  max-width: 680px;
+  width: 100%;
+  margin: 0.5rem auto 1.5rem;
+}
+
+.kick-stream-banner {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+  padding: 1rem 1.4rem;
+  background: linear-gradient(135deg, rgba(83, 252, 24, 0.08) 0%, rgba(16, 20, 28, 0.95) 100%);
+  border: 1px solid rgba(83, 252, 24, 0.45);
+  border-radius: var(--radius-lg);
+  text-decoration: none;
+  color: var(--white);
+  transition: all 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+  box-shadow: 0 4px 25px rgba(83, 252, 24, 0.12), inset 0 0 15px rgba(83, 252, 24, 0.03);
+  backdrop-filter: blur(10px);
+}
+
+.kick-stream-banner:hover {
+  transform: translateY(-3px);
+  border-color: #53fc18;
+  box-shadow: 0 8px 35px rgba(83, 252, 24, 0.25), inset 0 0 20px rgba(83, 252, 24, 0.08);
+}
+
+.kick-badge {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #53fc18;
+  color: #050505;
+  padding: 6px 14px;
+  border-radius: 8px;
+  font-weight: 900;
+  font-size: 0.95rem;
+  letter-spacing: 1px;
+  flex-shrink: 0;
+  box-shadow: 0 0 12px rgba(83, 252, 24, 0.5);
+}
+
+.kick-live-pulse {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: #ff0033;
+  box-shadow: 0 0 8px #ff0033;
+  animation: kickPulse 1.4s infinite ease-in-out;
+}
+
+@keyframes kickPulse {
+  0% { transform: scale(0.9); opacity: 0.8; }
+  50% { transform: scale(1.35); opacity: 1; }
+  100% { transform: scale(0.9); opacity: 0.8; }
+}
+
+.kick-content {
+  flex: 1;
+  text-align: left;
+}
+
+.kick-tag {
+  font-size: 0.72rem;
+  font-weight: 800;
+  color: #53fc18;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  display: block;
+  margin-bottom: 3px;
+}
+
+.kick-title {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 1.35rem;
+  letter-spacing: 1.5px;
+  color: #ffffff;
+  line-height: 1.15;
+  margin: 0;
+}
+
+.kick-desc {
+  font-size: 0.82rem;
+  color: #b0b0c2;
+  margin: 3px 0 0;
+  line-height: 1.35;
+}
+
+.kick-desc strong {
+  color: #53fc18;
+}
+
+.kick-btn-pill {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  background: rgba(83, 252, 24, 0.15);
+  border: 1px solid rgba(83, 252, 24, 0.4);
+  color: #53fc18;
+  border-radius: 50px;
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.8px;
+  flex-shrink: 0;
+  transition: all 0.25s ease;
+}
+
+.kick-stream-banner:hover .kick-btn-pill {
+  background: #53fc18;
+  color: #000000;
+}
+
+@media (max-width: 640px) {
+  .kick-stream-banner {
+    flex-direction: column;
+    text-align: center;
+    gap: 0.85rem;
+    padding: 1.25rem 1rem;
+  }
+  .kick-content {
+    text-align: center;
+  }
+  .kick-btn-pill {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+/* ---- HERO COUNTDOWN & EVENT WRAPPER ---- */
+.hero-event-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  margin: 0 auto 2rem;
+  max-width: 680px;
+  width: 100%;
+}
+
+.hero-countdown-box {
+  background: rgba(16, 18, 28, 0.8);
+  border: 1px solid rgba(255, 215, 0, 0.35);
+  border-radius: var(--radius-lg);
+  padding: 1.25rem 2rem;
+  width: 100%;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5), 0 0 25px rgba(255, 215, 0, 0.08);
+  backdrop-filter: blur(12px);
+}
+
+.countdown-header {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-bottom: 0.85rem;
+}
+
+.countdown-live-badge {
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 2px;
+  color: var(--gold);
+  text-transform: uppercase;
+}
+
+.countdown-tiles {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.85rem;
+}
+
+.countdown-tile {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background: rgba(0, 0, 0, 0.45);
+  border: 1px solid rgba(255, 215, 0, 0.25);
+  border-radius: 12px;
+  min-width: 72px;
+  padding: 0.6rem 0.5rem 0.45rem;
+  box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.6);
+}
+
+.countdown-digit {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 3rem;
+  line-height: 1;
+  color: var(--gold);
+  text-shadow: 0 0 20px rgba(255, 215, 0, 0.5);
+  letter-spacing: 2px;
+}
+
+.countdown-unit {
+  font-size: 0.65rem;
+  font-weight: 800;
+  letter-spacing: 1.5px;
+  color: var(--grey-light);
+  margin-top: 3px;
+  text-transform: uppercase;
+}
+
+.countdown-colon {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 2.5rem;
+  color: var(--gold);
+  line-height: 1;
+  margin-top: -10px;
+  opacity: 0.7;
+}
+
+.countdown-maps-btn,
+.hero-maps-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 1rem;
+  padding: 0.65rem 1.4rem;
+  background: rgba(255, 215, 0, 0.08);
+  border: 1px solid var(--gold);
+  border-radius: 50px;
+  color: var(--gold);
+  font-size: 0.82rem;
+  font-weight: 800;
+  letter-spacing: 1px;
+  text-decoration: none;
+  transition: all 0.25s ease;
+}
+
+.countdown-maps-btn:hover,
+.hero-maps-btn:hover {
+  background: var(--gold);
+  color: #000000;
+  box-shadow: 0 4px 20px rgba(255, 215, 0, 0.35);
+  transform: translateY(-2px);
+}
+
+.btn-google-maps-hero {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--gold);
+  color: #000000 !important;
+  font-weight: 900;
+  font-size: 0.88rem;
+  letter-spacing: 0.8px;
+  padding: 0.75rem 1.6rem;
+  border-radius: 50px;
+  text-decoration: none;
+  box-shadow: 0 4px 25px rgba(255, 215, 0, 0.4);
+  transition: all 0.25s ease;
+}
+
+.btn-google-maps-hero:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 30px rgba(255, 215, 0, 0.6);
+  background: #ffe033;
+}
+
+.btn-google-maps-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--gold);
+  font-weight: 800;
+  font-size: 0.85rem;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+  margin-top: 6px;
+  transition: color 0.2s ease;
+}
+
+.btn-google-maps-link:hover {
+  color: #ffffff;
+}
+
+@media (max-width: 600px) {
+  .countdown-tiles {
+    gap: 0.35rem;
+  }
+  .countdown-tile {
+    min-width: 58px;
+    padding: 0.5rem 0.3rem;
+  }
+  .countdown-digit {
+    font-size: 2.2rem;
+  }
+  .countdown-colon {
+    font-size: 1.8rem;
+  }
+}
+
+/* Light Theme overrides */
+[data-theme="light"] .kick-stream-banner {
+  background: linear-gradient(135deg, rgba(83, 252, 24, 0.12) 0%, #ffffff 100%);
+  border-color: rgba(30, 150, 10, 0.4);
+  box-shadow: 0 6px 25px rgba(0, 0, 0, 0.08);
+  color: #111118;
+}
+
+[data-theme="light"] .kick-title {
+  color: #111118;
+}
+
+[data-theme="light"] .kick-desc {
+  color: #444455;
+}
+
+[data-theme="light"] .kick-tag {
+  color: #1a8805;
+}
+
+[data-theme="light"] .kick-btn-pill {
+  background: rgba(30, 150, 10, 0.12);
+  border-color: rgba(30, 150, 10, 0.4);
+  color: #166e04;
+}
+
+[data-theme="light"] .hero-countdown-box {
+  background: #ffffff;
+  border-color: rgba(194, 149, 0, 0.35);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.07);
+}
+
+[data-theme="light"] .countdown-tile {
+  background: #f4f5f8;
+  border-color: rgba(194, 149, 0, 0.25);
+  box-shadow: none;
+}
+
+[data-theme="light"] .countdown-digit {
+  color: #111118;
+  text-shadow: none;
+}
+
+[data-theme="light"] .countdown-unit {
+  color: #555566;
+}
+
+[data-theme="light"] .countdown-colon {
+  color: #c29500;
+}
+
+[data-theme="light"] .countdown-maps-btn,
+[data-theme="light"] .hero-maps-btn {
+  background: #fbf8eb;
+  border-color: #c29500;
+  color: #8f6d00;
+}
+
+[data-theme="light"] .countdown-maps-btn:hover,
+[data-theme="light"] .hero-maps-btn:hover {
+  background: #c29500;
+  color: #ffffff;
+}
+
+[data-theme="light"] .btn-google-maps-hero {
+  background: #c29500;
+  color: #ffffff !important;
+  box-shadow: 0 4px 20px rgba(194, 149, 0, 0.3);
+}
+
+[data-theme="light"] .btn-google-maps-hero:hover {
+  background: #a98000;
+}

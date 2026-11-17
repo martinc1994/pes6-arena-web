@@ -36,6 +36,33 @@ export default function Home() {
   const [editMode, setEditMode] = useState(false);
   const [editingId, setEditingId] = useState(null);
 
+  // Cuenta regresiva para el evento (22 de Noviembre 2026, 13:00 hs Argentina UTC-3)
+  const [countdown, setCountdown] = useState(null);
+
+  useEffect(() => {
+    const EVENT_TARGET = new Date('2026-11-22T13:00:00-03:00').getTime();
+
+    const updateCountdown = () => {
+      const now = Date.now();
+      const diff = EVENT_TARGET - now;
+      if (diff <= 0) {
+        setCountdown({ days: 0, hours: 0, minutes: 0, seconds: 0, isLive: true });
+        return;
+      }
+      setCountdown({
+        days: Math.floor(diff / (1000 * 60 * 60 * 24)),
+        hours: Math.floor((diff / (1000 * 60 * 60)) % 24),
+        minutes: Math.floor((diff / (1000 * 60)) % 60),
+        seconds: Math.floor((diff / 1000) % 60),
+        isLive: false
+      });
+    };
+
+    updateCountdown();
+    const timer = setInterval(updateCountdown, 1000);
+    return () => clearInterval(timer);
+  }, []);
+
   const showToast = (msg, type = 'success') => {
     setToastMsg({ msg, type });
     setTimeout(() => setToastMsg(null), 2800);
@@ -179,20 +206,93 @@ export default function Home() {
           <span className="line-cup">PES ARENA</span>
         </h1>
 
-        <div className="hero-event-box">
-          <div className="event-date-block">
-            <span className="event-day">22</span>
-            <div className="event-detail">
-              <span className="event-month">NOVIEMBRE</span>
-              <span className="event-year">2026</span>
+        {/* Banner Streamer en Kick con ValenFulvo */}
+        <div className="kick-banner-wrapper">
+          <a
+            href="https://kick.com/valenfulvo"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="kick-stream-banner"
+          >
+            <div className="kick-badge">
+              <span className="kick-live-pulse"></span>
+              <span className="kick-logo-text">KICK</span>
+            </div>
+            <div className="kick-content">
+              <span className="kick-tag">TRANSMISIÓN EN VIVO · MAÑANA 22:00 HS</span>
+              <h3 className="kick-title">SORTEO OFICIAL DE LLAVES CON VALENFULVO</h3>
+              <p className="kick-desc">
+                Seguí en directo el sorteo de los cruces de Octavos de Final por <strong>kick.com/valenfulvo</strong>
+              </p>
+            </div>
+            <div className="kick-btn-pill">
+              <span>IR AL STREAM</span>
+              <span className="kick-arrow">→</span>
+            </div>
+          </a>
+        </div>
+
+        {/* Contenedor del Evento y Cuenta Regresiva */}
+        <div className="hero-event-container">
+          <div className="hero-event-box" style={{ marginBottom: 0 }}>
+            <div className="event-date-block">
+              <span className="event-day">22</span>
+              <div className="event-detail">
+                <span className="event-month">NOVIEMBRE</span>
+                <span className="event-year">2026 · 13:00 HS</span>
+              </div>
+            </div>
+            <div className="event-divider"></div>
+            <div className="event-place-block">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+              <div>
+                <span className="event-place">MICROESTADIO</span>
+                <span className="event-city">Garín, Buenos Aires</span>
+              </div>
             </div>
           </div>
-          <div className="event-divider"></div>
-          <div className="event-place-block">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
-            <div>
-              <span className="event-place">MICROESTADIO</span>
-              <span className="event-city">Garín, Buenos Aires</span>
+
+          {/* Caja de Cuenta Regresiva Adaptativa */}
+          <div className="hero-countdown-box">
+            <div className="countdown-header">
+              <span className="kick-live-pulse" style={{ background: 'var(--gold)', boxShadow: '0 0 8px var(--gold)' }}></span>
+              <span className="countdown-live-badge">
+                {countdown?.isLive ? '¡EL EVENTO YA ESTÁ EN VIVO!' : 'CUENTA REGRESIVA PARA EL EVENTO · INICIA 13:00 HS'}
+              </span>
+            </div>
+            <div className="countdown-tiles">
+              <div className="countdown-tile">
+                <span className="countdown-digit">{countdown ? String(countdown.days).padStart(2, '0') : '00'}</span>
+                <span className="countdown-unit">Días</span>
+              </div>
+              <span className="countdown-colon">:</span>
+              <div className="countdown-tile">
+                <span className="countdown-digit">{countdown ? String(countdown.hours).padStart(2, '0') : '00'}</span>
+                <span className="countdown-unit">Horas</span>
+              </div>
+              <span className="countdown-colon">:</span>
+              <div className="countdown-tile">
+                <span className="countdown-digit">{countdown ? String(countdown.minutes).padStart(2, '0') : '00'}</span>
+                <span className="countdown-unit">Min</span>
+              </div>
+              <span className="countdown-colon">:</span>
+              <div className="countdown-tile">
+                <span className="countdown-digit">{countdown ? String(countdown.seconds).padStart(2, '0') : '00'}</span>
+                <span className="countdown-unit">Seg</span>
+              </div>
+            </div>
+
+            {/* Botón de Google Maps */}
+            <div style={{ textAlign: 'center', marginTop: '0.85rem' }}>
+              <a
+                href="https://maps.app.goo.gl/xgT5NWWxgguvCuZa7"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="countdown-maps-btn"
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                <span>UBICACIÓN EN GOOGLE MAPS →</span>
+              </a>
             </div>
           </div>
         </div>
@@ -223,15 +323,6 @@ export default function Home() {
             <div className="portada-btn-text">
               <span className="portada-btn-title" style={{ color: 'var(--gold)' }}>LLAVES DEL TORNEO</span>
               <span className="portada-btn-desc">Mirá el cuadro y los cruces de Octavos</span>
-            </div>
-            <div className="portada-btn-arrow">→</div>
-          </Link>
-
-          <Link href="/clasificar" className="portada-btn">
-            <div className="portada-btn-icon">🏆</div>
-            <div className="portada-btn-text">
-              <span className="portada-btn-title">QUIERO CLASIFICAR</span>
-              <span className="portada-btn-desc">Anotate como jugador o influencer</span>
             </div>
             <div className="portada-btn-arrow">→</div>
           </Link>
