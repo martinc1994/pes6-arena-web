@@ -29,7 +29,7 @@ class SorteoSoundPlayer {
     return this.enabled;
   }
 
-  // Sonido de bolilla/pelota rebotando en el bolillero
+  // Sonido suave de pelota rebotando en el bolillero
   playBallClick() {
     if (!this.enabled) return;
     try {
@@ -44,7 +44,7 @@ class SorteoSoundPlayer {
       osc.frequency.setValueAtTime(freq, now);
       osc.frequency.exponentialRampToValueAtTime(120, now + 0.04);
 
-      gain.gain.setValueAtTime(0.08, now);
+      gain.gain.setValueAtTime(0.05, now);
       gain.gain.exponentialRampToValueAtTime(0.001, now + 0.04);
 
       osc.connect(gain);
@@ -55,14 +55,14 @@ class SorteoSoundPlayer {
     } catch (e) {}
   }
 
-  // Sonido de extracción / aceleración
+  // Sonido suave de giro / aceleración
   playWhoosh() {
     if (!this.enabled) return;
     try {
       this.init();
       if (!this.ctx) return;
       const now = this.ctx.currentTime;
-      const bufferSize = Math.floor(this.ctx.sampleRate * 0.28);
+      const bufferSize = Math.floor(this.ctx.sampleRate * 0.22);
       const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
       const data = buffer.getChannelData(0);
       for (let i = 0; i < bufferSize; i++) {
@@ -73,26 +73,26 @@ class SorteoSoundPlayer {
 
       const filter = this.ctx.createBiquadFilter();
       filter.type = 'bandpass';
-      filter.frequency.setValueAtTime(300, now);
-      filter.frequency.exponentialRampToValueAtTime(1600, now + 0.15);
-      filter.frequency.exponentialRampToValueAtTime(400, now + 0.28);
-      filter.Q.value = 2.5;
+      filter.frequency.setValueAtTime(350, now);
+      filter.frequency.exponentialRampToValueAtTime(1200, now + 0.12);
+      filter.frequency.exponentialRampToValueAtTime(450, now + 0.22);
+      filter.Q.value = 2.0;
 
       const gain = this.ctx.createGain();
-      gain.gain.setValueAtTime(0.02, now);
-      gain.gain.linearRampToValueAtTime(0.2, now + 0.12);
-      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.28);
+      gain.gain.setValueAtTime(0.01, now);
+      gain.gain.linearRampToValueAtTime(0.12, now + 0.1);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.22);
 
       noise.connect(filter);
       filter.connect(gain);
       gain.connect(this.ctx.destination);
 
       noise.start(now);
-      noise.stop(now + 0.28);
+      noise.stop(now + 0.22);
     } catch (e) {}
   }
 
-  // Golpe seco de botín al cuero del balón
+  // Golpe sutil al cuero del balón
   playKick() {
     if (!this.enabled) return;
     try {
@@ -100,100 +100,60 @@ class SorteoSoundPlayer {
       if (!this.ctx) return;
       const now = this.ctx.currentTime;
 
-      // Sub-bass thump
+      // Sub-bass thump cálido y suave
       const osc = this.ctx.createOscillator();
       const gain = this.ctx.createGain();
       osc.type = 'sine';
-      osc.frequency.setValueAtTime(170, now);
+      osc.frequency.setValueAtTime(145, now);
       osc.frequency.exponentialRampToValueAtTime(42, now + 0.12);
 
-      gain.gain.setValueAtTime(0.5, now);
+      gain.gain.setValueAtTime(0.35, now);
       gain.gain.exponentialRampToValueAtTime(0.001, now + 0.15);
 
       osc.connect(gain);
       gain.connect(this.ctx.destination);
       osc.start(now);
       osc.stop(now + 0.15);
-
-      // Ruido de impacto del balón
-      const bufferSize = Math.floor(this.ctx.sampleRate * 0.05);
-      const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
-      const data = buffer.getChannelData(0);
-      for (let i = 0; i < bufferSize; i++) {
-        data[i] = (Math.random() * 2 - 1) * Math.exp(-i / (bufferSize * 0.25));
-      }
-      const noise = this.ctx.createBufferSource();
-      noise.buffer = buffer;
-      const f = this.ctx.createBiquadFilter();
-      f.type = 'lowpass';
-      f.frequency.value = 650;
-      const nGain = this.ctx.createGain();
-      nGain.gain.setValueAtTime(0.35, now);
-      nGain.gain.exponentialRampToValueAtTime(0.001, now + 0.05);
-      noise.connect(f);
-      f.connect(nGain);
-      nGain.connect(this.ctx.destination);
-      noise.start(now);
-      noise.stop(now + 0.05);
     } catch (e) {}
   }
 
-  // Sonido de Gol + Tribuna sintetizado (como fallback de audio)
-  synthesizeGol() {
+  // Pitido / Chime moderno, sutil y armónico (tono cálido y agradable)
+  synthesizeChime() {
     if (!this.enabled) return;
     try {
       this.init();
       if (!this.ctx) return;
       const now = this.ctx.currentTime;
 
-      // Silbato corto al festejar
-      const wOsc = this.ctx.createOscillator();
-      const wGain = this.ctx.createGain();
-      wOsc.type = 'sine';
-      wOsc.frequency.setValueAtTime(2900, now + 0.1);
-      wOsc.frequency.linearRampToValueAtTime(3200, now + 0.35);
-      wGain.gain.setValueAtTime(0.001, now);
-      wGain.gain.linearRampToValueAtTime(0.15, now + 0.12);
-      wGain.gain.exponentialRampToValueAtTime(0.001, now + 0.4);
-      wOsc.connect(wGain);
-      wGain.connect(this.ctx.destination);
-      wOsc.start(now + 0.1);
-      wOsc.stop(now + 0.4);
+      // Melodía elegante y sutil de 3 tonos cristalinos (E5 -> A5 -> C#6)
+      const notes = [
+        { freq: 659.25, time: now + 0.0, gain: 0.12 },
+        { freq: 880.00, time: now + 0.09, gain: 0.14 },
+        { freq: 1108.73, time: now + 0.18, gain: 0.15 }
+      ];
 
-      // Rugido de tribuna (filtro pasabanda sobre ruido blanco)
-      const duration = 4.2;
-      const bufferSize = Math.floor(this.ctx.sampleRate * duration);
-      const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
-      const data = buffer.getChannelData(0);
-      for (let i = 0; i < bufferSize; i++) {
-        data[i] = Math.random() * 2 - 1;
-      }
-      const noise = this.ctx.createBufferSource();
-      noise.buffer = buffer;
+      notes.forEach((n) => {
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
 
-      const filter = this.ctx.createBiquadFilter();
-      filter.type = 'bandpass';
-      filter.frequency.setValueAtTime(550, now);
-      filter.frequency.linearRampToValueAtTime(950, now + 1.2);
-      filter.frequency.linearRampToValueAtTime(650, now + 3.8);
-      filter.Q.value = 1.6;
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(n.freq, n.time);
 
-      const gain = this.ctx.createGain();
-      gain.gain.setValueAtTime(0.01, now);
-      gain.gain.linearRampToValueAtTime(0.35, now + 0.6);
-      gain.gain.linearRampToValueAtTime(0.32, now + 2.8);
-      gain.gain.exponentialRampToValueAtTime(0.001, now + duration);
+        gain.gain.setValueAtTime(0.001, n.time);
+        gain.gain.linearRampToValueAtTime(n.gain, n.time + 0.015);
+        gain.gain.exponentialRampToValueAtTime(0.0001, n.time + 0.85);
 
-      noise.connect(filter);
-      filter.connect(gain);
-      gain.connect(this.ctx.destination);
-      noise.start(now);
-      noise.stop(now + duration);
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+
+        osc.start(n.time);
+        osc.stop(n.time + 0.85);
+      });
     } catch (e) {}
   }
 
-  // Reproducir FX de Gol con tribuna de fondo (archivo wav o síntesis)
-  playKickGol() {
+  // Revelación con tono moderno sutil y agradable
+  playReveal() {
     if (!this.enabled) return;
     try {
       if (typeof window !== 'undefined') {
@@ -201,23 +161,18 @@ class SorteoSoundPlayer {
           this.audioElement = new Audio('/sounds/gol.wav');
         }
         this.audioElement.currentTime = 0;
-        this.audioElement.volume = 0.85;
+        this.audioElement.volume = 0.6;
         const playPromise = this.audioElement.play();
         if (playPromise !== undefined) {
           playPromise.catch(() => {
-            this.synthesizeGol();
+            this.synthesizeChime();
           });
         }
         return;
       }
     } catch (e) {
-      this.synthesizeGol();
+      this.synthesizeChime();
     }
-  }
-
-  // Revelación con FX de Gol y tribuna
-  playReveal() {
-    this.playKickGol();
   }
 
   // Fanfarria final al completar el sorteo
@@ -235,7 +190,7 @@ class SorteoSoundPlayer {
         const start = now + idx * 0.08;
         osc.frequency.setValueAtTime(freq, start);
 
-        gain.gain.setValueAtTime(0.18, start);
+        gain.gain.setValueAtTime(0.12, start);
         gain.gain.exponentialRampToValueAtTime(0.001, start + 0.6);
 
         osc.connect(gain);
