@@ -1,7 +1,6 @@
 'use client';
 
 import React from 'react';
-import { isSeededPlayer } from './BolilleroModal';
 
 /**
  * Componente que renderiza el cuadro completo del torneo de 16 participantes:
@@ -36,7 +35,7 @@ export default function TournamentBracket({ matches = [], newlyPlacedId = null, 
     const isSeeded = isSeededPlayer(player);
 
     return (
-      <div className={`bracket-player filled ${isNew ? 'new-arrival' : ''} ${isSeeded ? 'bracket-seeded-player' : ''}`}>
+      <div className={`bracket-player filled ${isNew ? 'new-arrival' : ''}`}>
         <div className="bracket-player-avatar">
           {player.foto ? (
             <img src={player.foto} alt={player.nick} onError={(e) => { e.target.style.display = 'none'; e.target.nextSibling.style.display = 'flex'; }} />
@@ -45,10 +44,7 @@ export default function TournamentBracket({ matches = [], newlyPlacedId = null, 
         </div>
         <div className="bracket-player-info">
           <div className="bracket-player-top">
-            <span className="bracket-player-name">
-              {player.nick}
-              {isSeeded && <span title="Cabeza de Serie" style={{ color: 'var(--gold)', marginLeft: '4px', fontSize: '0.75rem' }}>⭐</span>}
-            </span>
+            <span className="bracket-player-name">{player.nick}</span>
             <span className={`bracket-mini-badge ${isInfluencer ? 'influencer' : 'campeon'}`}>
               {isInfluencer ? 'INF' : 'CMP'}
             </span>

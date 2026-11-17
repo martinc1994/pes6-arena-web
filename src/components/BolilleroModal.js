@@ -485,8 +485,6 @@ export default function BolilleroModal({
               {isTestMode
                 ? 'Sorteo de práctica. No modifica la web pública.'
                 : 'Sorteo oficial para el evento del 22 de Noviembre.'}
-              {' · '}
-              <strong style={{ color: 'var(--gold)' }}>7 Cabezas de Serie en llaves distintas</strong>
             </p>
           </div>
 
@@ -577,14 +575,10 @@ export default function BolilleroModal({
               >
                 <div className="reveal-header">
                   <span className="ball-number-badge">⚽ PELOTA #{extractedBall.number}</span>
-                  {extractedBall.isSeeded ? (
-                    <span className="seeded-header-badge">⭐ CABEZA DE SERIE</span>
-                  ) : (
-                    <span className="slot-assigned-badge">{extractedBall.slotLabel}</span>
-                  )}
+                  <span className="slot-assigned-badge">{extractedBall.slotLabel}</span>
                 </div>
 
-                <div className={`reveal-photo-wrapper ${extractedBall.isSeeded ? 'seeded-glow' : ''}`}>
+                <div className="reveal-photo-wrapper">
                   {revealedPlayer.foto ? (
                     <img
                       key={`img-${extractedBall.number}-${revealedPlayer.id}`}
@@ -609,17 +603,11 @@ export default function BolilleroModal({
                 <div className="reveal-player-info">
                   <div className="reveal-player-nick">
                     {revealedPlayer.nick}
-                    {extractedBall.isSeeded && <span style={{ marginLeft: '6px', color: 'var(--gold)', fontSize: '1.2rem' }}>⭐</span>}
                   </div>
                   <div className="reveal-player-team">
                     ⚽ {revealedPlayer.equipo || 'Equipo por definir'}
                   </div>
                   <div style={{ display: 'flex', gap: '6px', justifyContent: 'center', marginTop: '8px' }}>
-                    {extractedBall.isSeeded && (
-                      <span className="reveal-player-badge cabeza-serie">
-                        ⭐ CABEZA DE SERIE
-                      </span>
-                    )}
                     <span className="reveal-player-badge">
                       {revealedPlayer.tipo === 'influencer' ? '🎙️ INFLUENCER CONFIRMADO' : '🏆 CAMPEÓN CLASIFICADO'}
                     </span>
@@ -659,18 +647,12 @@ export default function BolilleroModal({
                   <div className="mini-match-teams">
                     <div className={`mini-team ${m.p1 ? 'filled' : 'vacant'}`}>
                       <span className="mini-role">L</span>
-                      <span className="mini-name">
-                        {m.p1 ? m.p1.nick : '—'}
-                        {m.p1 && isSeededPlayer(m.p1) && ' ⭐'}
-                      </span>
+                      <span className="mini-name">{m.p1 ? m.p1.nick : '—'}</span>
                     </div>
                     <div className="mini-vs">VS</div>
                     <div className={`mini-team ${m.p2 ? 'filled' : 'vacant'}`}>
                       <span className="mini-role">V</span>
-                      <span className="mini-name">
-                        {m.p2 ? m.p2.nick : '—'}
-                        {m.p2 && isSeededPlayer(m.p2) && ' ⭐'}
-                      </span>
+                      <span className="mini-name">{m.p2 ? m.p2.nick : '—'}</span>
                     </div>
                   </div>
                 </div>
