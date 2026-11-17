@@ -3,8 +3,8 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { soundPlayer } from '@/lib/soundEffects';
 
-const SEEDED_IDS = [24, 25, 27, 28, 30, 33];
-// Cubilla (24), Benja Calero (25), El Tío Bock (27), Maxi (28), Facu Codeso (30), Cabra (33)
+const SEEDED_IDS = [24, 25, 26, 27, 28, 30, 33];
+// Cubilla (24), Benja Calero (25), Nickoema (26), El Tío Bock (27), Maxi (28), Facu Codeso (30), Cabra (33)
 
 export const isSeededPlayer = (p) => {
   if (!p) return false;
@@ -13,6 +13,7 @@ export const isSeededPlayer = (p) => {
   return (
     name.includes('benja') ||
     name.includes('cubilla') ||
+    name.includes('nicko') ||
     name.includes('codeso') ||
     name.includes('maxi') ||
     name.includes('bock') ||
@@ -27,6 +28,94 @@ function shuffle(arr) {
     [copy[i], copy[j]] = [copy[j], copy[i]];
   }
   return copy;
+}
+
+// Dibuja una pelota de fútbol realista en el Canvas con gajos negros y costuras
+function drawSoccerBall(ctx, x, y, r, rot, num) {
+  ctx.save();
+  ctx.translate(x, y);
+
+  // 1. Recorte circular para la esfera del balón
+  ctx.beginPath();
+  ctx.arc(0, 0, r, 0, Math.PI * 2);
+  ctx.save();
+  ctx.clip();
+
+  // Fondo de cuero blanco
+  ctx.fillStyle = '#f8f9fa';
+  ctx.fill();
+
+  // Rotación física del balón
+  ctx.rotate(rot);
+
+  // 5 gajos perimetrales negros
+  ctx.fillStyle = '#18181c';
+  for (let i = 0; i < 5; i++) {
+    const a = (i * 2 * Math.PI) / 5;
+    ctx.beginPath();
+    ctx.arc(Math.cos(a) * (r * 0.95), Math.sin(a) * (r * 0.95), r * 0.38, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  // Pentágono negro central
+  const pentR = r * 0.38;
+  ctx.beginPath();
+  for (let i = 0; i < 5; i++) {
+    const a = (i * 2 * Math.PI) / 5 - Math.PI / 2;
+    const px = Math.cos(a) * pentR;
+    const py = Math.sin(a) * pentR;
+    if (i === 0) ctx.moveTo(px, py);
+    else ctx.lineTo(px, py);
+  }
+  ctx.closePath();
+  ctx.fillStyle = '#141416';
+  ctx.fill();
+
+  // Líneas de costura desde el pentágono hacia los bordes
+  ctx.strokeStyle = '#2b2b36';
+  ctx.lineWidth = 1.1;
+  for (let i = 0; i < 5; i++) {
+    const a = (i * 2 * Math.PI) / 5 - Math.PI / 2;
+    const px = Math.cos(a) * pentR;
+    const py = Math.sin(a) * pentR;
+    const ox = Math.cos(a + Math.PI / 5) * (r * 0.95);
+    const oy = Math.sin(a + Math.PI / 5) * (r * 0.95);
+    ctx.beginPath();
+    ctx.moveTo(px, py);
+    ctx.lineTo(ox, oy);
+    ctx.stroke();
+  }
+
+  // Sombreado esférico 3D y brillo de luz
+  const grad = ctx.createRadialGradient(-r * 0.35, -r * 0.38, r * 0.08, 0, 0, r);
+  grad.addColorStop(0, 'rgba(255, 255, 255, 0.6)');
+  grad.addColorStop(0.35, 'rgba(255, 255, 255, 0.06)');
+  grad.addColorStop(0.7, 'rgba(0, 0, 0, 0.15)');
+  grad.addColorStop(1, 'rgba(0, 0, 0, 0.7)');
+  ctx.beginPath();
+  ctx.arc(0, 0, r, 0, Math.PI * 2);
+  ctx.fillStyle = grad;
+  ctx.fill();
+
+  ctx.restore(); // fin clip
+
+  // Borde exterior
+  ctx.beginPath();
+  ctx.arc(0, 0, r, 0, Math.PI * 2);
+  ctx.strokeStyle = 'rgba(0, 0, 0, 0.5)';
+  ctx.lineWidth = 1.2;
+  ctx.stroke();
+
+  // Número dorado en el centro (sin rotar para que siempre sea legible)
+  ctx.fillStyle = '#FFD700';
+  ctx.shadowColor = '#000000';
+  ctx.shadowBlur = 4;
+  ctx.font = `900 ${Math.round(r * 0.8)}px sans-serif`;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(num.toString(), 0, 1);
+
+  ctx.restore();
 }
 
 export default function BolilleroModal({
@@ -60,7 +149,7 @@ export default function BolilleroModal({
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [soundEnabled, setSoundEnabled] = useState(true);
 
-  // Inicializar o reiniciar bolillero con la regla de Cabezas de Serie en llaves distintas
+  // Inicializar o reiniciar bolillero con la regla de 7 Cabezas de Serie en llaves distintas
   const initDraw = () => {
     setIsFinished(false);
     setIsAuto(false);
@@ -75,9 +164,9 @@ export default function BolilleroModal({
     const seeded = source.filter((p) => isSeededPlayer(p));
     const nonSeeded = source.filter((p) => !isSeededPlayer(p));
 
-    // 1. Elegir 6 llaves distintas al azar entre las 8 (0 a 7) para los 6 cabezas de serie
+    // 1. Elegir 7 llaves distintas al azar entre las 8 (0 a 7) para los 7 cabezas de serie
     const matchIndices = [0, 1, 2, 3, 4, 5, 6, 7];
-    const chosenMatches = shuffle(matchIndices).slice(0, 6);
+    const chosenMatches = shuffle(matchIndices).slice(0, 7);
     const shuffledSeeded = shuffle(seeded);
 
     const planned = new Array(16).fill(null);
@@ -89,7 +178,7 @@ export default function BolilleroModal({
       planned[slot] = shuffledSeeded[i];
     });
 
-    // 3. Rellenar los 10 lugares restantes con los no cabezas de serie
+    // 3. Rellenar los 9 lugares restantes con los no cabezas de serie
     const shuffledNonSeeded = shuffle(nonSeeded);
     let nonIdx = 0;
     for (let s = 0; s < 16; s++) {
@@ -117,7 +206,7 @@ export default function BolilleroModal({
     }
   }, [isOpen]);
 
-  // Canvas Physics para las bolillas dentro del bolillero
+  // Canvas Physics para las pelotas de fútbol dentro del bolillero
   useEffect(() => {
     if (!isOpen) return;
     const canvas = canvasRef.current;
@@ -131,20 +220,21 @@ export default function BolilleroModal({
     const centerY = height / 2;
     const radius = 125;
 
-    const BALL_COLORS = ['#FFD700', '#E8003D', '#00D2FF', '#FFFFFF', '#FFA500', '#00FF88'];
-
     const count = Math.max(availableCount, 1);
+    const ballRadius = 16.5; // Tamaño mayor solicitado para pelotas de fútbol
+
     const balls = Array.from({ length: count }, (_, i) => {
       const angle = Math.random() * Math.PI * 2;
-      const r = Math.random() * (radius - 28);
+      const r = Math.random() * (radius - 32);
       return {
         x: centerX + Math.cos(angle) * r,
         y: centerY + Math.sin(angle) * r,
         vx: (Math.random() - 0.5) * 4,
         vy: (Math.random() - 0.5) * 4,
-        r: 13,
-        num: i + 1,
-        color: BALL_COLORS[i % BALL_COLORS.length]
+        r: ballRadius,
+        rot: Math.random() * Math.PI * 2,
+        vRot: (Math.random() - 0.5) * 0.08,
+        num: i + 1
       };
     });
 
@@ -183,7 +273,7 @@ export default function BolilleroModal({
       ctx.stroke();
       ctx.restore();
 
-      // 3. Simulación física y rebote de bolillas
+      // 3. Simulación física y rebote de pelotas de fútbol
       const speedMultiplier = isSpinning ? 2.5 : 0.8;
       clickTimer++;
 
@@ -195,6 +285,7 @@ export default function BolilleroModal({
 
         b.x += b.vx * speedMultiplier;
         b.y += b.vy * speedMultiplier;
+        b.rot += b.vx * 0.04 + b.vRot;
 
         b.vx *= 0.99;
         b.vy *= 0.99;
@@ -210,6 +301,7 @@ export default function BolilleroModal({
 
           b.vx = (b.vx - 2 * dot * normalX) * 0.92;
           b.vy = (b.vy - 2 * dot * normalY) * 0.92;
+          b.vRot = (Math.random() - 0.5) * 0.12;
 
           b.x = centerX + normalX * (radius - 4 - b.r);
           b.y = centerY + normalY * (radius - 4 - b.r);
@@ -219,25 +311,8 @@ export default function BolilleroModal({
           }
         }
 
-        ctx.save();
-        ctx.beginPath();
-        ctx.arc(b.x, b.y, b.r, 0, Math.PI * 2);
-
-        const bGrad = ctx.createRadialGradient(b.x - 3, b.y - 4, 1, b.x, b.y, b.r);
-        bGrad.addColorStop(0, '#FFFFFF');
-        bGrad.addColorStop(0.35, b.color);
-        bGrad.addColorStop(1, '#050505');
-        ctx.fillStyle = bGrad;
-        ctx.shadowColor = b.color;
-        ctx.shadowBlur = 4;
-        ctx.fill();
-
-        ctx.fillStyle = '#111';
-        ctx.font = 'bold 9px monospace';
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        ctx.fillText(b.num.toString(), b.x, b.y);
-        ctx.restore();
+        // Dibujar la pelota de fútbol con sus costuras y número
+        drawSoccerBall(ctx, b.x, b.y, b.r, b.rot, b.num);
       });
 
       animId = requestAnimationFrame(loop);
@@ -247,7 +322,7 @@ export default function BolilleroModal({
     return () => cancelAnimationFrame(animId);
   }, [isOpen, isSpinning, availableCount]);
 
-  // Extraer una bolilla
+  // Extraer una bolilla / pelota de fútbol
   const drawNextBall = () => {
     if (isSpinning) return;
     const currentSlot = currentSlotRef.current;
@@ -260,9 +335,11 @@ export default function BolilleroModal({
     }
 
     setIsSpinning(true);
+    // Sonido de golpe seco al balón + aceleración
+    soundPlayer?.playKick();
     soundPlayer?.playWhoosh();
 
-    // Tiempo de giro suspense (1.2 segundos). Nota: la tarjeta anterior permanece visible mientras gira el tambor.
+    // Tiempo de giro suspense (1.2 segundos). La tarjeta previa sigue visible sin desaparecer.
     setTimeout(() => {
       const slotIdx = currentSlotRef.current;
       if (slotIdx >= 16) {
@@ -284,10 +361,12 @@ export default function BolilleroModal({
         isSeeded
       };
 
-      // Establecer tarjeta de revelación (se mantendrá en pantalla hasta que se sortee la próxima bolilla)
+      // Establecer tarjeta de revelación (se mantiene fija en pantalla sin desaparecer)
       setExtractedBall(ballData);
       setRevealedPlayer(chosenPlayer);
       setIsSpinning(false);
+
+      // Sonido de GOL con tribuna de fondo!
       soundPlayer?.playReveal();
 
       // Actualizar matches
@@ -306,7 +385,7 @@ export default function BolilleroModal({
       setCurrentSlotIndex(nextSlot);
       setAvailableCount(16 - nextSlot);
 
-      // Desplazamiento horizontal EXCLUSIVO dentro de la grilla de llaves (SIN scrollear la ventana ni el modal)
+      // Desplazamiento horizontal EXCLUSIVO dentro de la tira de llaves
       setTimeout(() => {
         const container = document.getElementById('mini-matches-scroll-container');
         const targetCard = document.getElementById(`mini-match-${matchIndex + 1}`);
@@ -320,12 +399,12 @@ export default function BolilleroModal({
       if (nextSlot >= 16) {
         setIsFinished(true);
         setIsAuto(false);
-        setTimeout(() => soundPlayer?.playFanfare(), 1500);
+        setTimeout(() => soundPlayer?.playFanfare(), 2500);
       }
     }, 1200);
   };
 
-  // Modo automático: tiempo extendido entre bolillas para disfrutar la foto y los detalles
+  // Modo automático: tiempo extendido entre pelotas para disfrutar la foto y los detalles
   useEffect(() => {
     let timer;
     if (isAuto && !isSpinning && !isFinished && currentSlotIndex < 16) {
@@ -407,7 +486,7 @@ export default function BolilleroModal({
                 ? 'Sorteo de práctica. No modifica la web pública.'
                 : 'Sorteo oficial para el evento del 22 de Noviembre.'}
               {' · '}
-              <strong style={{ color: 'var(--gold)' }}>6 Cabezas de Serie en llaves distintas</strong>
+              <strong style={{ color: 'var(--gold)' }}>7 Cabezas de Serie en llaves distintas</strong>
             </p>
           </div>
 
@@ -428,9 +507,9 @@ export default function BolilleroModal({
           </div>
         </div>
 
-        {/* Zona Principal: Bolillero + Revelación de Bolilla */}
+        {/* Zona Principal: Bolillero de Fútbol + Revelación de Participante */}
         <div className="bolillero-main-grid">
-          {/* Lado izquierdo: Bolillero Físico */}
+          {/* Lado izquierdo: Bolillero Físico de Pelotas */}
           <div className="bolillero-drum-stage">
             <div className="drum-wrapper">
               <canvas ref={canvasRef} className="bolillero-canvas" />
@@ -438,7 +517,7 @@ export default function BolilleroModal({
             </div>
 
             <div className="drum-status-badge">
-              <span>Bolillas restantes: </span>
+              <span>Pelotas restantes: </span>
               <strong>{availableCount} / 16</strong>
             </div>
 
@@ -451,7 +530,7 @@ export default function BolilleroModal({
                     disabled={isSpinning || currentSlotIndex >= 16}
                     onClick={drawNextBall}
                   >
-                    {isSpinning ? 'GIRANDO BOLILLERO...' : '🎲 SACAR SIGUIENTE BOLILLA'}
+                    {isSpinning ? 'GIRANDO BOLILLERO...' : '⚽ SACAR SIGUIENTE PELOTA'}
                   </button>
 
                   <button
@@ -494,10 +573,10 @@ export default function BolilleroModal({
             {revealedPlayer && extractedBall ? (
               <div
                 key={`reveal-card-${extractedBall.number}-${revealedPlayer.id}`}
-                className="player-reveal-card fade-in"
+                className="player-reveal-card"
               >
                 <div className="reveal-header">
-                  <span className="ball-number-badge">BOLILLA #{extractedBall.number}</span>
+                  <span className="ball-number-badge">⚽ PELOTA #{extractedBall.number}</span>
                   {extractedBall.isSeeded ? (
                     <span className="seeded-header-badge">⭐ CABEZA DE SERIE</span>
                   ) : (
@@ -554,9 +633,9 @@ export default function BolilleroModal({
               </div>
             ) : (
               <div className="player-reveal-placeholder">
-                <div className="placeholder-ball">🎱</div>
+                <div className="placeholder-ball">⚽</div>
                 <h3>Esperando extracción...</h3>
-                <p>Hacé click en "Sacar Siguiente Bolilla" o "Sorteo Automático" para comenzar.</p>
+                <p>Hacé click en "Sacar Siguiente Pelota" o "Sorteo Automático" para comenzar.</p>
               </div>
             )}
           </div>
