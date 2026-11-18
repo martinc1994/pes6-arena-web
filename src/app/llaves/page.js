@@ -5,7 +5,8 @@ import Link from 'next/link';
 import ThemeToggle from '@/components/ThemeToggle';
 import TournamentBracket from '@/components/TournamentBracket';
 import BolilleroModal from '@/components/BolilleroModal';
-import { getClasificadosConVotos } from '@/lib/participantes';
+import { getClasificadosConVotos, getDailyVoteBonus } from '@/lib/participantes';
+import { supabase } from '@/lib/supabase';
 import { checkAdminPassword, saveSorteoDefinitivo, getSorteoDefinitivo, resetSorteoDefinitivo } from '../actions';
 
 export default function LlavesPage() {
@@ -32,6 +33,25 @@ export default function LlavesPage() {
     setTimeout(() => setToastMsg(null), 3500);
   };
 
+  // Función auxiliar para refrescar fotos en el bracket definitivo con la última información de cada jugador
+  const refreshMatchesWithLatestPlayers = (matchesArray, currentPlayers) => {
+    if (!Array.isArray(matchesArray) || !Array.isArray(currentPlayers)) return matchesArray;
+    const playerMap = new Map(currentPlayers.map(p => [Number(p.id), p]));
+    return matchesArray.map(m => {
+      const p1Updated = m.p1 && playerMap.has(Number(m.p1.id))
+        ? { ...m.p1, ...playerMap.get(Number(m.p1.id)) }
+        : m.p1;
+      const p2Updated = m.p2 && playerMap.has(Number(m.p2.id))
+        ? { ...m.p2, ...playerMap.get(Number(m.p2.id)) }
+        : m.p2;
+      return {
+        ...m,
+        p1: p1Updated,
+        p2: p2Updated
+      };
+    });
+  };
+
   // Cargar participantes y sorteo definitivo guardado
   useEffect(() => {
     const list = getClasificadosConVotos();
@@ -41,18 +61,58 @@ export default function LlavesPage() {
     try {
       const localSorteo = localStorage.getItem('pes6_definitive_bracket');
       if (localSorteo) {
-        setDefinitiveMatches(JSON.parse(localSorteo));
+        const parsed = JSON.parse(localSorteo);
+        setDefinitiveMatches(refreshMatchesWithLatestPlayers(parsed, list));
       }
     } catch (e) {}
 
-    // 2. Consultar base de datos / servidor
-    const fetchSorteo = async () => {
+    // 2. Sincronizar en segundo plano con Supabase para reflejar últimas fotos subidas por admin
+    const syncPlayersAndSorteo = async () => {
+      let activeList = list;
+      try {
+        if (supabase) {
+          const { data: supaList } = await supabase.from('clasificados').select('*').order('id', { ascending: true });
+          if (supaList && supaList.length > 0) {
+            const { likesBonus, dislikesBonus } = getDailyVoteBonus();
+            const localMap = new Map(list.map(p => [Number(p.id), p]));
+            const merged = supaList.map(sp => {
+              const lp = localMap.get(Number(sp.id));
+              let effectivePhoto = sp.foto || '';
+              if (lp && lp.foto) {
+                const localFilename = lp.foto.split('/').pop();
+                if (sp.foto && sp.foto.includes(localFilename)) {
+                  effectivePhoto = lp.foto;
+                }
+              }
+              return {
+                ...sp,
+                foto: effectivePhoto,
+                likes: (sp.likes || 0) + likesBonus,
+                dislikes: (sp.dislikes || 0) + dislikesBonus
+              };
+            });
+            const sorted = [...merged].sort((a, b) => {
+              const infA = a.tipo === 'influencer' ? 1 : 0;
+              const infB = b.tipo === 'influencer' ? 1 : 0;
+              if (infA !== infB) return infB - infA;
+              return a.id - b.id;
+            });
+            activeList = sorted;
+            setPlayersList(sorted);
+          }
+        }
+      } catch (err) {
+        console.warn('Conexión con Supabase no disponible para clasificados:', err);
+      }
+
+      // 3. Consultar base de datos para el sorteo definitivo guardado
       try {
         const saved = await getSorteoDefinitivo();
         if (saved && Array.isArray(saved) && saved.length > 0) {
-          setDefinitiveMatches(saved);
+          const refreshed = refreshMatchesWithLatestPlayers(saved, activeList);
+          setDefinitiveMatches(refreshed);
           try {
-            localStorage.setItem('pes6_definitive_bracket', JSON.stringify(saved));
+            localStorage.setItem('pes6_definitive_bracket', JSON.stringify(refreshed));
           } catch (e) {}
         }
       } catch (err) {
@@ -62,7 +122,7 @@ export default function LlavesPage() {
       }
     };
 
-    fetchSorteo();
+    syncPlayersAndSorteo();
 
     // Comprobar si ya estaba logueado como admin en esta sesión o viene con ?admin=true
     if (typeof window !== 'undefined') {

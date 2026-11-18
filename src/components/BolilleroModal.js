@@ -204,7 +204,7 @@ export default function BolilleroModal({
     if (isOpen) {
       initDraw();
     }
-  }, [isOpen]);
+  }, [isOpen, allPlayers]);
 
   // Canvas Physics para las pelotas de fútbol dentro del bolillero
   useEffect(() => {

@@ -222,7 +222,7 @@ export default function Home() {
               <span className="kick-tag">TRANSMISIÓN EN VIVO · MAÑANA 22:00 HS</span>
               <h3 className="kick-title">SORTEO OFICIAL DE LLAVES CON VALENFULVO</h3>
               <p className="kick-desc">
-                Seguí en directo el sorteo de los cruces de Octavos de Final por <strong>kick.com/valenfulvo</strong>
+                Seguí en directo el sorteo de los cruces del torneo en <strong>kick.com/valenfulvo</strong>
               </p>
             </div>
             <div className="kick-btn-pill">
@@ -239,7 +239,7 @@ export default function Home() {
               <span className="event-day">22</span>
               <div className="event-detail">
                 <span className="event-month">NOVIEMBRE</span>
-                <span className="event-year">2026 · 13:00 HS</span>
+                <span className="event-year">2026 · 12:00 HS</span>
               </div>
             </div>
             <div className="event-divider"></div>
@@ -291,7 +291,7 @@ export default function Home() {
                 className="countdown-maps-btn"
               >
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
-                <span>UBICACIÓN EN GOOGLE MAPS →</span>
+                <span>UBI EN MAPS →</span>
               </a>
             </div>
           </div>
