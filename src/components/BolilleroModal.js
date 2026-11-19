@@ -6,6 +6,22 @@ import { soundPlayer } from '@/lib/soundEffects';
 const SEEDED_IDS = [24, 25, 26, 27, 28, 30, 33];
 // Cubilla (24), Benja Calero (25), Nickoema (26), El Tío Bock (27), Maxi (28), Facu Codeso (30), Cabra (33)
 
+// Jugadores ya sorteados en vivo en el stream según la captura (Llaves 1 a 6)
+const DRAWN_STREAM_PLAYERS = [
+  { matchIndex: 0, isLocal: true, id: 31, nick: 'TUNOX' },
+  { matchIndex: 0, isLocal: false, id: 30, nick: 'FACU CODESO' },
+  { matchIndex: 1, isLocal: true, id: 16, nick: 'AGUS BRAVO' },
+  { matchIndex: 1, isLocal: false, id: 21, nick: 'LAZARO' },
+  { matchIndex: 2, isLocal: true, id: 18, nick: 'MARCOS' },
+  { matchIndex: 2, isLocal: false, id: 24, nick: 'CUBILLA' },
+  { matchIndex: 3, isLocal: true, id: 27, nick: 'EL TÍO BOCK' },
+  { matchIndex: 3, isLocal: false, id: 19, nick: 'SANTIAGO LOPEZ' },
+  { matchIndex: 4, isLocal: true, id: 15, nick: 'ZEZE CABRERA' },
+  { matchIndex: 4, isLocal: false, id: 26, nick: 'NICKOEMA' },
+  { matchIndex: 5, isLocal: true, id: 20, nick: 'VIKINGO' },
+  { matchIndex: 5, isLocal: false, id: 28, nick: 'MAXI' }
+];
+
 export const isSeededPlayer = (p) => {
   if (!p) return false;
   if (SEEDED_IDS.includes(Number(p.id))) return true;
@@ -148,61 +164,149 @@ export default function BolilleroModal({
   const [isSaving, setIsSaving] = useState(false);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [soundEnabled, setSoundEnabled] = useState(true);
+  const [isResumedMode, setIsResumedMode] = useState(true);
 
-  // Inicializar o reiniciar bolillero con la regla de 7 Cabezas de Serie en llaves distintas
-  const initDraw = () => {
+  // Inicializar o reanudar sorteo
+  const initDraw = (resumeStream = true) => {
     setIsFinished(false);
     setIsAuto(false);
     setIsSpinning(false);
-    setCurrentSlotIndex(0);
-    currentSlotRef.current = 0;
-    setExtractedBall(null);
-    setRevealedPlayer(null);
     setShowConfirmModal(false);
+    setIsResumedMode(resumeStream);
 
     const source = allPlayers && allPlayers.length > 0 ? allPlayers : [];
-    const seeded = source.filter((p) => isSeededPlayer(p));
-    const nonSeeded = source.filter((p) => !isSeededPlayer(p));
 
-    // 1. Elegir 7 llaves distintas al azar entre las 8 (0 a 7) para los 7 cabezas de serie
-    const matchIndices = [0, 1, 2, 3, 4, 5, 6, 7];
-    const chosenMatches = shuffle(matchIndices).slice(0, 7);
-    const shuffledSeeded = shuffle(seeded);
+    const getPlayer = (id, fallbackNick) => {
+      const found = source.find((p) => Number(p.id) === Number(id));
+      if (found) return found;
+      const byNick = source.find((p) =>
+        (p.nick || '').toLowerCase().includes(fallbackNick.toLowerCase())
+      );
+      if (byNick) return byNick;
+      return { id, nick: fallbackNick, equipo: '', foto: '' };
+    };
 
-    const planned = new Array(16).fill(null);
+    if (resumeStream) {
+      // MODO REANUDAR DESDE EL STREAM:
+      // Llaves 1 a 6 ya definidas en vivo (12 pelotas)
+      const planned = new Array(16).fill(null);
+      DRAWN_STREAM_PLAYERS.forEach((item, idx) => {
+        planned[idx] = getPlayer(item.id, item.nick);
+      });
 
-    // 2. Ubicar a cada cabeza de serie en una llave distinta (Local o Visitante al azar)
-    chosenMatches.forEach((mIdx, i) => {
-      const isVisitante = Math.random() < 0.5;
-      const slot = mIdx * 2 + (isVisitante ? 1 : 0);
-      planned[slot] = shuffledSeeded[i];
-    });
+      // 4 jugadores restantes para Llaves 7 y 8:
+      // Benja Calero (25) y Cabra (33) -> cabezas de serie, DEBEN ir en llaves distintas (uno en Llave 7, otro en Llave 8)
+      // Leandro Zapata (17) y Nicolas (22) -> completan los cruces
+      const benja = getPlayer(25, 'BENJA CALERO');
+      const cabra = getPlayer(33, 'CABRA');
+      const zapata = getPlayer(17, 'LEANDRO ZAPATA');
+      const nicolas = getPlayer(22, 'NICOLAS');
 
-    // 3. Rellenar los 9 lugares restantes con los no cabezas de serie
-    const shuffledNonSeeded = shuffle(nonSeeded);
-    let nonIdx = 0;
-    for (let s = 0; s < 16; s++) {
-      if (!planned[s]) {
-        planned[s] = shuffledNonSeeded[nonIdx++];
+      const seededRem = shuffle([benja, cabra]);
+      const nonSeededRem = shuffle([zapata, nicolas]);
+
+      // Llave 7 (slots 12 y 13):
+      if (Math.random() < 0.5) {
+        planned[12] = seededRem[0]; // Local
+        planned[13] = nonSeededRem[0]; // Visitante
+      } else {
+        planned[12] = nonSeededRem[0]; // Local
+        planned[13] = seededRem[0]; // Visitante
       }
-    }
 
-    plannedSlotsRef.current = planned;
-    setAvailableCount(16);
+      // Llave 8 (slots 14 y 15):
+      if (Math.random() < 0.5) {
+        planned[14] = seededRem[1]; // Local
+        planned[15] = nonSeededRem[1]; // Visitante
+      } else {
+        planned[14] = nonSeededRem[1]; // Local
+        planned[15] = seededRem[1]; // Visitante
+      }
 
-    setMatches(
-      Array.from({ length: 8 }, (_, i) => ({
+      plannedSlotsRef.current = planned;
+      currentSlotRef.current = 12;
+      setCurrentSlotIndex(12);
+      setAvailableCount(4);
+
+      // Llaves 1 a 6 completas, Llaves 7 y 8 pendientes
+      const resumedMatches = Array.from({ length: 8 }, (_, i) => ({
         id: i + 1,
         name: `Llave #${i + 1}`,
-        p1: null,
-        p2: null
-      }))
-    );
+        p1: i < 6 ? planned[i * 2] : null,
+        p2: i < 6 ? planned[i * 2 + 1] : null
+      }));
+      setMatches(resumedMatches);
+
+      // Último jugador sorteado en la transmisión: MAXI (Llave 6, Visitante, Pelota #12)
+      const maxiPlayer = planned[11];
+      setExtractedBall({
+        number: 12,
+        player: maxiPlayer,
+        matchNumber: 6,
+        slotName: 'Visitante',
+        slotLabel: 'Llave #6 (Visitante)',
+        isSeeded: isSeededPlayer(maxiPlayer)
+      });
+      setRevealedPlayer(maxiPlayer);
+
+      // Desplazar automáticamente hacia Llave 6 / 7
+      setTimeout(() => {
+        const container = document.getElementById('mini-matches-scroll-container');
+        const targetCard = document.getElementById('mini-match-6');
+        if (container && targetCard) {
+          const cRect = container.getBoundingClientRect();
+          const tRect = targetCard.getBoundingClientRect();
+          container.scrollLeft += (tRect.left - cRect.left) - (cRect.width / 2) + (tRect.width / 2);
+        }
+      }, 250);
+
+    } else {
+      // MODO DESDE CERO (0 de 16)
+      setCurrentSlotIndex(0);
+      currentSlotRef.current = 0;
+      setExtractedBall(null);
+      setRevealedPlayer(null);
+
+      const seeded = source.filter((p) => isSeededPlayer(p));
+      const nonSeeded = source.filter((p) => !isSeededPlayer(p));
+
+      const matchIndices = [0, 1, 2, 3, 4, 5, 6, 7];
+      const chosenMatches = shuffle(matchIndices).slice(0, 7);
+      const shuffledSeeded = shuffle(seeded);
+
+      const planned = new Array(16).fill(null);
+
+      chosenMatches.forEach((mIdx, i) => {
+        const isVisitante = Math.random() < 0.5;
+        const slot = mIdx * 2 + (isVisitante ? 1 : 0);
+        planned[slot] = shuffledSeeded[i];
+      });
+
+      const shuffledNonSeeded = shuffle(nonSeeded);
+      let nonIdx = 0;
+      for (let s = 0; s < 16; s++) {
+        if (!planned[s]) {
+          planned[s] = shuffledNonSeeded[nonIdx++];
+        }
+      }
+
+      plannedSlotsRef.current = planned;
+      setAvailableCount(16);
+
+      setMatches(
+        Array.from({ length: 8 }, (_, i) => ({
+          id: i + 1,
+          name: `Llave #${i + 1}`,
+          p1: null,
+          p2: null
+        }))
+      );
+    }
   };
 
   useEffect(() => {
     if (isOpen) {
-      initDraw();
+      initDraw(true);
     }
   }, [isOpen, allPlayers]);
 
@@ -223,6 +327,7 @@ export default function BolilleroModal({
     const count = Math.max(availableCount, 1);
     const ballRadius = 16.5; // Tamaño mayor solicitado para pelotas de fútbol
 
+    const startNum = 16 - count + 1;
     const balls = Array.from({ length: count }, (_, i) => {
       const angle = Math.random() * Math.PI * 2;
       const r = Math.random() * (radius - 32);
@@ -234,7 +339,7 @@ export default function BolilleroModal({
         r: ballRadius,
         rot: Math.random() * Math.PI * 2,
         vRot: (Math.random() - 0.5) * 0.08,
-        num: i + 1
+        num: startNum + i
       };
     });
 
@@ -477,9 +582,16 @@ export default function BolilleroModal({
         {/* Cabecera del Sorteo */}
         <div className="bolillero-header">
           <div className="bolillero-title-box">
-            <span className="bolillero-badge">
-              {isTestMode ? '🟡 MODO PRUEBA (SIMULADOR)' : '🔴 SORTEO OFICIAL DEFINITIVO'}
-            </span>
+            <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap', marginBottom: '4px' }}>
+              <span className="bolillero-badge">
+                {isTestMode ? '🟡 MODO PRUEBA (SIMULADOR)' : '🔴 SORTEO OFICIAL DEFINITIVO'}
+              </span>
+              {isResumedMode && (
+                <span className="bolillero-badge" style={{ background: '#FFD700', color: '#000', fontWeight: 900 }}>
+                  📡 REANUDADO DE TRANSMISIÓN EN VIVO (12/16)
+                </span>
+              )}
+            </div>
             <h2>SORTEO DE LLAVES · OCTAVOS DE FINAL</h2>
             <p className="bolillero-sub">
               {isTestMode
@@ -528,7 +640,11 @@ export default function BolilleroModal({
                     disabled={isSpinning || currentSlotIndex >= 16}
                     onClick={drawNextBall}
                   >
-                    {isSpinning ? 'GIRANDO BOLILLERO...' : '⚽ SACAR SIGUIENTE PELOTA'}
+                    {isSpinning
+                      ? 'GIRANDO BOLILLERO...'
+                      : `⚽ SACAR PELOTA #${currentSlotIndex + 1} (LLAVE #${Math.floor(currentSlotIndex / 2) + 1} ${
+                          currentSlotIndex % 2 === 0 ? 'LOCAL' : 'VISITANTE'
+                        })`}
                   </button>
 
                   <button
@@ -546,13 +662,28 @@ export default function BolilleroModal({
                   >
                     ⏩ SALTEAR ANIMACIÓN
                   </button>
+
+                  <div style={{ display: 'flex', gap: '8px', marginTop: '4px', width: '100%', justifyContent: 'center' }}>
+                    <button
+                      className="btn-draw-action ghost"
+                      style={{ fontSize: '0.72rem', padding: '6px 10px', flex: 1 }}
+                      onClick={() => initDraw(true)}
+                      title="Volver al punto donde se cortó el stream (12/16)"
+                    >
+                      ⏪ Reanudar Stream (12/16)
+                    </button>
+                    <button
+                      className="btn-draw-action ghost"
+                      style={{ fontSize: '0.72rem', padding: '6px 10px', flex: 1 }}
+                      onClick={() => initDraw(false)}
+                      title="Reiniciar el sorteo desde cero (0/16)"
+                    >
+                      🔄 Reiniciar desde 0
+                    </button>
+                  </div>
                 </>
               ) : (
                 <div className="finished-actions">
-                  <button className="btn-draw-action secondary" onClick={initDraw}>
-                    🔄 REINICIAR SORTEO
-                  </button>
-
                   {!isTestMode && onConfirmDefinitive && (
                     <button
                       className="btn-draw-action publish"
@@ -561,6 +692,23 @@ export default function BolilleroModal({
                       🏆 PUBLICAR COMO SORTEO DEFINITIVO
                     </button>
                   )}
+
+                  <div style={{ display: 'flex', gap: '8px', width: '100%', marginTop: '6px' }}>
+                    <button
+                      className="btn-draw-action secondary"
+                      style={{ flex: 1, fontSize: '0.8rem' }}
+                      onClick={() => initDraw(true)}
+                    >
+                      ⏪ REANUDAR (12/16)
+                    </button>
+                    <button
+                      className="btn-draw-action ghost"
+                      style={{ flex: 1, fontSize: '0.8rem' }}
+                      onClick={() => initDraw(false)}
+                    >
+                      🔄 SORTEO DE CERO (0/16)
+                    </button>
+                  </div>
                 </div>
               )}
             </div>
