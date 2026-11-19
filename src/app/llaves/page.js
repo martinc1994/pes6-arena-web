@@ -5,13 +5,37 @@ import Link from 'next/link';
 import ThemeToggle from '@/components/ThemeToggle';
 import TournamentBracket from '@/components/TournamentBracket';
 import BolilleroModal from '@/components/BolilleroModal';
+import OFFICIAL_DEFINITIVE_MATCHES from '@/data/sorteoDefinitivo.json';
 import { getClasificadosConVotos, getDailyVoteBonus } from '@/lib/participantes';
 import { supabase } from '@/lib/supabase';
 import { checkAdminPassword, saveSorteoDefinitivo, getSorteoDefinitivo, resetSorteoDefinitivo } from '../actions';
 
+// Función auxiliar para refrescar fotos en el bracket definitivo con la última información de cada jugador
+const refreshMatchesWithLatestPlayers = (matchesArray, currentPlayers) => {
+  if (!Array.isArray(matchesArray) || !Array.isArray(currentPlayers)) return matchesArray;
+  const playerMap = new Map(currentPlayers.map(p => [Number(p.id), p]));
+  return matchesArray.map(m => {
+    const p1Updated = m.p1 && playerMap.has(Number(m.p1.id))
+      ? { ...m.p1, ...playerMap.get(Number(m.p1.id)) }
+      : m.p1;
+    const p2Updated = m.p2 && playerMap.has(Number(m.p2.id))
+      ? { ...m.p2, ...playerMap.get(Number(m.p2.id)) }
+      : m.p2;
+    return {
+      ...m,
+      p1: p1Updated,
+      p2: p2Updated
+    };
+  });
+};
+
 export default function LlavesPage() {
-  const [definitiveMatches, setDefinitiveMatches] = useState(null);
-  const [loading, setLoading] = useState(true);
+  // Participantes completos (16)
+  const [playersList, setPlayersList] = useState(() => getClasificadosConVotos());
+  const [definitiveMatches, setDefinitiveMatches] = useState(() =>
+    refreshMatchesWithLatestPlayers(OFFICIAL_DEFINITIVE_MATCHES, getClasificadosConVotos())
+  );
+  const [loading, setLoading] = useState(false);
   const [toastMsg, setToastMsg] = useState(null);
 
   // Admin state
@@ -25,31 +49,9 @@ export default function LlavesPage() {
   const [bolilleroOpen, setBolilleroOpen] = useState(false);
   const [bolilleroTestMode, setBolilleroTestMode] = useState(true);
 
-  // Participantes completos (16)
-  const [playersList, setPlayersList] = useState(() => getClasificadosConVotos());
-
   const showToast = (msg, type = 'success') => {
     setToastMsg({ msg, type });
     setTimeout(() => setToastMsg(null), 3500);
-  };
-
-  // Función auxiliar para refrescar fotos en el bracket definitivo con la última información de cada jugador
-  const refreshMatchesWithLatestPlayers = (matchesArray, currentPlayers) => {
-    if (!Array.isArray(matchesArray) || !Array.isArray(currentPlayers)) return matchesArray;
-    const playerMap = new Map(currentPlayers.map(p => [Number(p.id), p]));
-    return matchesArray.map(m => {
-      const p1Updated = m.p1 && playerMap.has(Number(m.p1.id))
-        ? { ...m.p1, ...playerMap.get(Number(m.p1.id)) }
-        : m.p1;
-      const p2Updated = m.p2 && playerMap.has(Number(m.p2.id))
-        ? { ...m.p2, ...playerMap.get(Number(m.p2.id)) }
-        : m.p2;
-      return {
-        ...m,
-        p1: p1Updated,
-        p2: p2Updated
-      };
-    });
   };
 
   // Cargar participantes y sorteo definitivo guardado

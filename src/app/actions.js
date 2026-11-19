@@ -2,6 +2,7 @@
 
 import { supabaseServer as supabase } from '@/lib/supabaseServer'
 import { headers } from 'next/headers'
+import definitiveBracketData from '@/data/sorteoDefinitivo.json'
 
 const verifyPassword = (password) => {
   if (password !== process.env.ADMIN_PASSWORD) return false;
@@ -136,17 +137,17 @@ export async function saveSorteoDefinitivo(password, bracketData) {
 
 export async function getSorteoDefinitivo() {
   try {
-    if (!supabase) return null;
+    if (!supabase) return definitiveBracketData;
     const { data, error } = await supabase
       .from('torneos')
       .select('*')
       .order('id', { ascending: false })
       .limit(1);
 
-    if (error || !data || data.length === 0) return null;
-    return data[0]?.partidos || null;
+    if (error || !data || data.length === 0) return definitiveBracketData;
+    return data[0]?.partidos || definitiveBracketData;
   } catch (err) {
-    return null;
+    return definitiveBracketData;
   }
 }
 

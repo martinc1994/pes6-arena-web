@@ -219,10 +219,10 @@ export default function Home() {
               <span className="kick-logo-text">KICK</span>
             </div>
             <div className="kick-content">
-              <span className="kick-tag">TRANSMISIÓN EN VIVO · MAÑANA 22:00 HS</span>
-              <h3 className="kick-title">SORTEO OFICIAL DE LLAVES CON VALENFULVO</h3>
+              <span className="kick-tag">TRANSMISIÓN EN VIVO · SORTEO REALIZADO</span>
+              <h3 className="kick-title">SORTEO OFICIAL DE LLAVES DEFINIDO</h3>
               <p className="kick-desc">
-                Seguí en directo el sorteo de los cruces del torneo en <strong>kick.com/valenfulvo</strong>
+                Los 8 cruces de octavos ya están definidos. Mirá el cuadro en <strong>Llaves</strong> o seguí a Valen en <strong>kick.com/valenfulvo</strong>
               </p>
             </div>
             <div className="kick-btn-pill">

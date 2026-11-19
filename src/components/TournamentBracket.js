@@ -32,7 +32,6 @@ export default function TournamentBracket({ matches = [], newlyPlacedId = null, 
     }
 
     const isInfluencer = player.tipo === 'influencer';
-    const isSeeded = isSeededPlayer(player);
 
     return (
       <div className={`bracket-player filled ${isNew ? 'new-arrival' : ''}`}>
