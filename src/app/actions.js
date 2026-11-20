@@ -145,7 +145,12 @@ export async function getSorteoDefinitivo() {
       .limit(1);
 
     if (error || !data || data.length === 0) return definitiveBracketData;
-    return data[0]?.partidos || definitiveBracketData;
+    const stored = data[0]?.partidos;
+    // Si en la base de datos hay guardado un array viejo de partidos, priorizar el orden oficial de sorteoDefinitivo.json
+    if (Array.isArray(stored)) {
+      return definitiveBracketData;
+    }
+    return stored || definitiveBracketData;
   } catch (err) {
     return definitiveBracketData;
   }

@@ -60,13 +60,9 @@ export default function LlavesPage() {
     const list = getClasificadosConVotos();
     setPlayersList(list);
 
-    // 1. Intentar cargar desde localStorage de inmediato
+    // 1. Limpiar caché viejo de llaves y cargar resultados previos si existen
     try {
-      const localSorteo = localStorage.getItem('pes6_definitive_bracket');
-      if (localSorteo) {
-        const parsed = JSON.parse(localSorteo);
-        setDefinitiveMatches(refreshMatchesWithLatestPlayers(parsed, list));
-      }
+      localStorage.removeItem('pes6_definitive_bracket');
       const localResults = localStorage.getItem('pes6_tournament_results');
       if (localResults) {
         setTournamentResults(JSON.parse(localResults));
@@ -107,39 +103,27 @@ export default function LlavesPage() {
             activeList = sorted;
             setPlayersList(sorted);
             // Actualizar inmediatamente las llaves en pantalla con los jugadores más recientes de la base de datos
-            setDefinitiveMatches(prev => refreshMatchesWithLatestPlayers(prev || OFFICIAL_DEFINITIVE_MATCHES, sorted));
+            setDefinitiveMatches(refreshMatchesWithLatestPlayers(OFFICIAL_DEFINITIVE_MATCHES, sorted));
           }
         }
       } catch (err) {
         console.warn('Conexión con Supabase no disponible para clasificados:', err);
       }
 
-      // 3. Consultar base de datos para el sorteo definitivo y resultados guardados
+      // 3. Consultar base de datos para resultados guardados en vivo
       try {
         const saved = await getSorteoDefinitivo();
-        if (saved) {
-          if (Array.isArray(saved) && saved.length > 0) {
-            const refreshed = refreshMatchesWithLatestPlayers(saved, activeList);
-            setDefinitiveMatches(refreshed);
-            try {
-              localStorage.setItem('pes6_definitive_bracket', JSON.stringify(refreshed));
-            } catch (e) {}
-          } else if (typeof saved === 'object' && saved.octavos) {
-            // saved son los resultados de partidos en vivo
-            setTournamentResults(saved);
-            // Aseguramos que los cruces base de octavos siempre tengan los jugadores actualizados (reemplazos/fotos)
-            const refreshed = refreshMatchesWithLatestPlayers(OFFICIAL_DEFINITIVE_MATCHES, activeList);
-            setDefinitiveMatches(refreshed);
-            try {
-              localStorage.setItem('pes6_tournament_results', JSON.stringify(saved));
-              localStorage.setItem('pes6_definitive_bracket', JSON.stringify(refreshed));
-            } catch (e) {}
-          }
-        } else {
-          setDefinitiveMatches(refreshMatchesWithLatestPlayers(OFFICIAL_DEFINITIVE_MATCHES, activeList));
+        if (saved && typeof saved === 'object' && !Array.isArray(saved) && (saved.octavos || saved.cuartos || saved.semis || saved.final)) {
+          setTournamentResults(saved);
+          try {
+            localStorage.setItem('pes6_tournament_results', JSON.stringify(saved));
+          } catch (e) {}
         }
+        // Siempre garantizar que los cruces de octavos sigan el orden oficial definitivo
+        const refreshed = refreshMatchesWithLatestPlayers(OFFICIAL_DEFINITIVE_MATCHES, activeList);
+        setDefinitiveMatches(refreshed);
       } catch (err) {
-        console.warn('No se pudo obtener sorteo de base de datos:', err);
+        console.warn('No se pudo obtener datos de torneo:', err);
         setDefinitiveMatches(refreshMatchesWithLatestPlayers(OFFICIAL_DEFINITIVE_MATCHES, activeList));
       } finally {
         setLoading(false);
