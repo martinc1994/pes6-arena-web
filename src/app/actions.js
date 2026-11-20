@@ -161,3 +161,44 @@ export async function resetSorteoDefinitivo(password) {
     return { error: err.message };
   }
 }
+
+export async function saveTournamentResults(password, resultsPayload) {
+  if (!verifyPassword(password)) return { error: "Contraseña incorrecta" };
+  try {
+    if (!supabase) return { error: "Supabase no está configurado", fallbackOnly: true };
+
+    const payload = {
+      id: 1,
+      nombre: 'PES6 ARENA 2026 - Gran Final',
+      fecha: '2026-11-22',
+      partidos: resultsPayload
+    };
+
+    const { data, error } = await supabase
+      .from('torneos')
+      .upsert(payload, { onConflict: 'id' })
+      .select();
+
+    if (error) {
+      const { data: updateData, error: updateErr } = await supabase
+        .from('torneos')
+        .update({ partidos: resultsPayload })
+        .eq('id', 1)
+        .select();
+
+      if (updateErr || !updateData || updateData.length === 0) {
+        const { data: insertData, error: insertErr } = await supabase
+          .from('torneos')
+          .insert(payload)
+          .select();
+        if (insertErr) return { error: "Error en base de datos: " + insertErr.message };
+        return { success: true, data: insertData };
+      }
+      return { success: true, data: updateData };
+    }
+
+    return { success: true, data };
+  } catch (err) {
+    return { error: err.message || "Error al guardar resultados" };
+  }
+}

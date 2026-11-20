@@ -36,11 +36,11 @@ export default function Home() {
   const [editMode, setEditMode] = useState(false);
   const [editingId, setEditingId] = useState(null);
 
-  // Cuenta regresiva para el evento (22 de Noviembre 2026, 13:00 hs Argentina UTC-3)
+  // Cuenta regresiva para el evento (22 de Noviembre 2026, 12:00 hs Argentina UTC-3)
   const [countdown, setCountdown] = useState(null);
 
   useEffect(() => {
-    const EVENT_TARGET = new Date('2026-11-22T13:00:00-03:00').getTime();
+    const EVENT_TARGET = new Date('2026-11-22T12:00:00-03:00').getTime();
 
     const updateCountdown = () => {
       const now = Date.now();
@@ -88,16 +88,41 @@ export default function Home() {
 
   useEffect(() => {
     fetchDatos();
+    try {
+      const isLogged = localStorage.getItem('pes6_admin_logged') === 'true' || sessionStorage.getItem('pes6_admin_logged') === 'true';
+      if (isLogged) {
+        setAdminLoggedIn(true);
+        const savedPass = localStorage.getItem('pes6_admin_pass') || sessionStorage.getItem('pes6_admin_pass') || '';
+        if (savedPass) setAdminPass(savedPass);
+      }
+    } catch (e) {}
   }, []);
 
   const handleAdminLogin = async () => {
     const valid = await checkAdminPassword(adminPass);
     if (valid) {
       setAdminLoggedIn(true);
+      try {
+        localStorage.setItem('pes6_admin_logged', 'true');
+        localStorage.setItem('pes6_admin_pass', adminPass);
+        sessionStorage.setItem('pes6_admin_logged', 'true');
+        sessionStorage.setItem('pes6_admin_pass', adminPass);
+      } catch (e) {}
     } else {
       setAdminError('Contraseña incorrecta');
       setTimeout(() => setAdminError(''), 2000);
     }
+  };
+
+  const handleAdminLogout = () => {
+    setAdminLoggedIn(false);
+    setAdminPass('');
+    try {
+      localStorage.removeItem('pes6_admin_logged');
+      localStorage.removeItem('pes6_admin_pass');
+      sessionStorage.removeItem('pes6_admin_logged');
+      sessionStorage.removeItem('pes6_admin_pass');
+    } catch (e) {}
   };
 
   const startEdit = (c) => {
@@ -206,29 +231,20 @@ export default function Home() {
           <span className="line-cup">PES ARENA</span>
         </h1>
 
-        {/* Banner Streamer en Kick con ValenFulvo */}
-        <div className="kick-banner-wrapper">
+        {/* Acceso Directo al Canal de Kick del Streamer */}
+        <div className="kick-stream-bar">
           <a
             href="https://kick.com/valenfulvo"
             target="_blank"
             rel="noopener noreferrer"
-            className="kick-stream-banner"
+            className="kick-stream-pill"
           >
-            <div className="kick-badge">
-              <span className="kick-live-pulse"></span>
-              <span className="kick-logo-text">KICK</span>
-            </div>
-            <div className="kick-content">
-              <span className="kick-tag">TRANSMISIÓN EN VIVO · SORTEO REALIZADO</span>
-              <h3 className="kick-title">SORTEO OFICIAL DE LLAVES DEFINIDO</h3>
-              <p className="kick-desc">
-                Los 8 cruces de octavos ya están definidos. Mirá el cuadro en <strong>Llaves</strong> o seguí a Valen en <strong>kick.com/valenfulvo</strong>
-              </p>
-            </div>
-            <div className="kick-btn-pill">
-              <span>IR AL STREAM</span>
-              <span className="kick-arrow">→</span>
-            </div>
+            <span className="kick-live-pulse"></span>
+            <span className="kick-pill-logo">KICK</span>
+            <span className="kick-pill-sep">·</span>
+            <span className="kick-pill-name">VALENFULVO</span>
+            <span className="kick-pill-badge">CANAL EN VIVO</span>
+            <span className="kick-pill-arrow">→</span>
           </a>
         </div>
 
@@ -257,7 +273,7 @@ export default function Home() {
             <div className="countdown-header">
               <span className="kick-live-pulse" style={{ background: 'var(--gold)', boxShadow: '0 0 8px var(--gold)' }}></span>
               <span className="countdown-live-badge">
-                {countdown?.isLive ? '¡EL EVENTO YA ESTÁ EN VIVO!' : 'CUENTA REGRESIVA PARA EL EVENTO · INICIA 13:00 HS'}
+                {countdown?.isLive ? '¡EL EVENTO YA ESTÁ EN VIVO!' : 'CUENTA REGRESIVA PARA EL EVENTO · INICIA 12:00 HS'}
               </span>
             </div>
             <div className="countdown-tiles">
@@ -385,8 +401,26 @@ export default function Home() {
       <div className={`admin-overlay ${showAdmin ? 'active' : ''}`} onClick={(e) => { if (e.target.className.includes('admin-overlay')) setShowAdmin(false) }}>
         <div className="admin-panel" onClick={(e) => e.stopPropagation()}>
           <div className="admin-header">
-            <h2>Panel Administrador</h2>
-            <button className="admin-close" onClick={() => setShowAdmin(false)}>✕</button>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <h2>Panel Administrador</h2>
+              {adminLoggedIn && (
+                <span style={{ fontSize: '0.65rem', background: '#00c853', color: '#000', fontWeight: 900, padding: '2px 6px', borderRadius: '4px' }}>
+                  CONECTADO
+                </span>
+              )}
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              {adminLoggedIn && (
+                <button
+                  type="button"
+                  onClick={handleAdminLogout}
+                  style={{ background: 'transparent', border: '1px solid rgba(255,255,255,0.2)', color: 'var(--grey-light)', fontSize: '0.7rem', padding: '4px 8px', borderRadius: '4px', cursor: 'pointer' }}
+                >
+                  Cerrar Sesión
+                </button>
+              )}
+              <button className="admin-close" onClick={() => setShowAdmin(false)}>✕</button>
+            </div>
           </div>
 
           {!adminLoggedIn ? (
@@ -398,37 +432,60 @@ export default function Home() {
             </div>
           ) : (
             <div className="admin-content">
-              {/* Acceso al Sorteo de Llaves */}
-              <div style={{ background: 'linear-gradient(135deg, rgba(255, 215, 0, 0.12), rgba(232, 0, 61, 0.12))', border: '1px solid var(--gold)', padding: '14px', borderRadius: '8px', marginBottom: '18px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
+              {/* Acceso al Sorteo de Llaves y Carga de Resultados */}
+              <div style={{ background: 'linear-gradient(135deg, rgba(255, 215, 0, 0.12), rgba(0, 200, 83, 0.12))', border: '1px solid var(--gold)', padding: '14px', borderRadius: '8px', marginBottom: '18px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
                 <div>
                   <div style={{ fontSize: '0.9rem', fontWeight: 900, color: 'var(--gold)', letterSpacing: '1px', textTransform: 'uppercase' }}>
-                    🎲 Sorteo de Llaves (Octavos de Final)
+                    ⚽ Cuadro y Resultados del Evento
                   </div>
                   <div style={{ fontSize: '0.75rem', color: 'var(--grey-light)', marginTop: '2px' }}>
-                    Simulá el bolillero con animación 3D o realizá el sorteo definitivo.
+                    Cargá los goles de los partidos en vivo o administrá el bolillero de llaves.
                   </div>
                 </div>
-                <Link
-                  href="/llaves?admin=true"
-                  style={{
-                    background: 'var(--gold)',
-                    color: '#000',
-                    fontWeight: 900,
-                    fontSize: '0.8rem',
-                    padding: '8px 14px',
-                    borderRadius: '6px',
-                    textDecoration: 'none',
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    gap: '4px'
-                  }}
-                  onClick={() => {
-                    sessionStorage.setItem('pes6_admin_logged', 'true');
-                    sessionStorage.setItem('pes6_admin_pass', adminPass);
-                  }}
-                >
-                  Abrir Bolillero →
-                </Link>
+                <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                  <Link
+                    href="/llaves?admin=true&action=resultados"
+                    style={{
+                      background: 'linear-gradient(135deg, #00c853, #009624)',
+                      color: '#fff',
+                      fontWeight: 900,
+                      fontSize: '0.8rem',
+                      padding: '8px 14px',
+                      borderRadius: '6px',
+                      textDecoration: 'none',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '4px'
+                    }}
+                    onClick={() => {
+                      sessionStorage.setItem('pes6_admin_logged', 'true');
+                      sessionStorage.setItem('pes6_admin_pass', adminPass);
+                    }}
+                  >
+                    ⚽ Cargar Resultados →
+                  </Link>
+                  <Link
+                    href="/llaves?admin=true"
+                    style={{
+                      background: 'var(--gold)',
+                      color: '#000',
+                      fontWeight: 900,
+                      fontSize: '0.8rem',
+                      padding: '8px 14px',
+                      borderRadius: '6px',
+                      textDecoration: 'none',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '4px'
+                    }}
+                    onClick={() => {
+                      sessionStorage.setItem('pes6_admin_logged', 'true');
+                      sessionStorage.setItem('pes6_admin_pass', adminPass);
+                    }}
+                  >
+                    Abrir Bolillero →
+                  </Link>
+                </div>
               </div>
 
               <div style={{ fontSize: '0.8rem', fontWeight: 'bold', color: 'var(--gold)', letterSpacing: '1px', textTransform: 'uppercase', marginBottom: '10px' }}>

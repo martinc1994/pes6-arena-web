@@ -5,10 +5,12 @@ import Link from 'next/link';
 import ThemeToggle from '@/components/ThemeToggle';
 import TournamentBracket from '@/components/TournamentBracket';
 import BolilleroModal from '@/components/BolilleroModal';
+import ResultadosModal from '@/components/ResultadosModal';
 import OFFICIAL_DEFINITIVE_MATCHES from '@/data/sorteoDefinitivo.json';
 import { getClasificadosConVotos, getDailyVoteBonus } from '@/lib/participantes';
+import { buildTournamentTree } from '@/lib/tournamentManager';
 import { supabase } from '@/lib/supabase';
-import { checkAdminPassword, saveSorteoDefinitivo, getSorteoDefinitivo, resetSorteoDefinitivo } from '../actions';
+import { checkAdminPassword, saveSorteoDefinitivo, getSorteoDefinitivo, resetSorteoDefinitivo, saveTournamentResults } from '../actions';
 
 // Función auxiliar para refrescar fotos en el bracket definitivo con la última información de cada jugador
 const refreshMatchesWithLatestPlayers = (matchesArray, currentPlayers) => {
@@ -49,6 +51,10 @@ export default function LlavesPage() {
   const [bolilleroOpen, setBolilleroOpen] = useState(false);
   const [bolilleroTestMode, setBolilleroTestMode] = useState(true);
 
+  // Estado de resultados de partidos (Octavos, Cuartos, Semis, Final)
+  const [tournamentResults, setTournamentResults] = useState({});
+  const [resultadosModalOpen, setResultadosModalOpen] = useState(false);
+
   const showToast = (msg, type = 'success') => {
     setToastMsg({ msg, type });
     setTimeout(() => setToastMsg(null), 3500);
@@ -65,6 +71,10 @@ export default function LlavesPage() {
       if (localSorteo) {
         const parsed = JSON.parse(localSorteo);
         setDefinitiveMatches(refreshMatchesWithLatestPlayers(parsed, list));
+      }
+      const localResults = localStorage.getItem('pes6_tournament_results');
+      if (localResults) {
+        setTournamentResults(JSON.parse(localResults));
       }
     } catch (e) {}
 
@@ -107,15 +117,25 @@ export default function LlavesPage() {
         console.warn('Conexión con Supabase no disponible para clasificados:', err);
       }
 
-      // 3. Consultar base de datos para el sorteo definitivo guardado
+      // 3. Consultar base de datos para el sorteo definitivo y resultados guardados
       try {
         const saved = await getSorteoDefinitivo();
-        if (saved && Array.isArray(saved) && saved.length > 0) {
-          const refreshed = refreshMatchesWithLatestPlayers(saved, activeList);
-          setDefinitiveMatches(refreshed);
-          try {
-            localStorage.setItem('pes6_definitive_bracket', JSON.stringify(refreshed));
-          } catch (e) {}
+        if (saved) {
+          if (Array.isArray(saved) && saved.length > 0) {
+            const refreshed = refreshMatchesWithLatestPlayers(saved, activeList);
+            setDefinitiveMatches(refreshed);
+            try {
+              localStorage.setItem('pes6_definitive_bracket', JSON.stringify(refreshed));
+            } catch (e) {}
+          } else if (typeof saved === 'object' && saved.octavos) {
+            if (Array.isArray(saved.octavos)) {
+              setDefinitiveMatches(refreshMatchesWithLatestPlayers(saved.octavos, activeList));
+            }
+            setTournamentResults(saved);
+            try {
+              localStorage.setItem('pes6_tournament_results', JSON.stringify(saved));
+            } catch (e) {}
+          }
         }
       } catch (err) {
         console.warn('No se pudo obtener sorteo de base de datos:', err);
@@ -129,11 +149,20 @@ export default function LlavesPage() {
     // Comprobar si ya estaba logueado como admin en esta sesión o viene con ?admin=true
     if (typeof window !== 'undefined') {
       const isLogged = sessionStorage.getItem('pes6_admin_logged') === 'true';
-      if (isLogged) setIsAdminLoggedIn(true);
+      if (isLogged) {
+        setIsAdminLoggedIn(true);
+      }
 
       const params = new URLSearchParams(window.location.search);
       if (params.get('admin') === 'true' && !isLogged) {
         setShowAdminLoginModal(true);
+      }
+      if (params.get('action') === 'resultados') {
+        if (isLogged) {
+          setResultadosModalOpen(true);
+        } else {
+          setShowAdminLoginModal(true);
+        }
       }
     }
   }, []);
@@ -150,10 +179,78 @@ export default function LlavesPage() {
         setShowAdminLoginModal(false);
         setAdminPassInput('');
         showToast('Acceso de administrador concedido', 'success');
+
+        if (typeof window !== 'undefined') {
+          const params = new URLSearchParams(window.location.search);
+          if (params.get('action') === 'resultados') {
+            setResultadosModalOpen(true);
+          }
+        }
       } else {
         setAdminError('Contraseña incorrecta');
       }
     });
+  };
+
+  const handleSaveResult = async (round, matchIndex, resultData) => {
+    const updated = {
+      ...tournamentResults,
+      [round]: {
+        ...(tournamentResults[round] || {}),
+        [matchIndex]: resultData
+      }
+    };
+
+    setTournamentResults(updated);
+    try {
+      localStorage.setItem('pes6_tournament_results', JSON.stringify(updated));
+    } catch (e) {}
+
+    const pass = (typeof window !== 'undefined' ? (localStorage.getItem('pes6_admin_pass') || sessionStorage.getItem('pes6_admin_pass')) : '') || '';
+    if (pass) {
+      try {
+        await saveTournamentResults(pass, updated);
+      } catch (err) {
+        console.warn('Error guardando en base de datos:', err);
+      }
+    }
+
+    showToast('⚽ Marcador guardado y cuadro actualizado', 'success');
+  };
+
+  const handleClearResult = async (round, matchIndex) => {
+    const roundObj = { ...(tournamentResults[round] || {}) };
+    delete roundObj[matchIndex];
+
+    const updated = {
+      ...tournamentResults,
+      [round]: roundObj
+    };
+
+    setTournamentResults(updated);
+    try {
+      localStorage.setItem('pes6_tournament_results', JSON.stringify(updated));
+    } catch (e) {}
+
+    const pass = (typeof window !== 'undefined' ? (localStorage.getItem('pes6_admin_pass') || sessionStorage.getItem('pes6_admin_pass')) : '') || '';
+    if (pass) {
+      try {
+        await saveTournamentResults(pass, updated);
+      } catch (err) {}
+    }
+
+    showToast('Resultado reseteado a pendiente', 'warning');
+  };
+
+  const handleAdminLogout = () => {
+    setIsAdminLoggedIn(false);
+    try {
+      localStorage.removeItem('pes6_admin_logged');
+      localStorage.removeItem('pes6_admin_pass');
+      sessionStorage.removeItem('pes6_admin_logged');
+      sessionStorage.removeItem('pes6_admin_pass');
+    } catch (e) {}
+    showToast('Sesión de administrador cerrada', 'warning');
   };
 
   const openBolillero = (testMode) => {
@@ -162,7 +259,7 @@ export default function LlavesPage() {
   };
 
   const handleConfirmDefinitive = async (matchesDrawn) => {
-    const pass = sessionStorage.getItem('pes6_admin_pass') || '';
+    const pass = (typeof window !== 'undefined' ? (localStorage.getItem('pes6_admin_pass') || sessionStorage.getItem('pes6_admin_pass')) : '') || '';
     const res = await saveSorteoDefinitivo(pass, matchesDrawn);
 
     if (res && res.error) {
@@ -183,7 +280,7 @@ export default function LlavesPage() {
     if (!confirm('¿Estás seguro de reiniciar el sorteo definitivo? La web volverá a mostrar el cuadro como pendiente.')) {
       return;
     }
-    const pass = sessionStorage.getItem('pes6_admin_pass') || '';
+    const pass = (typeof window !== 'undefined' ? (localStorage.getItem('pes6_admin_pass') || sessionStorage.getItem('pes6_admin_pass')) : '') || '';
     await resetSorteoDefinitivo(pass);
     setDefinitiveMatches(null);
     try {
@@ -191,6 +288,8 @@ export default function LlavesPage() {
     } catch (e) {}
     showToast('Sorteo oficial reiniciado', 'success');
   };
+
+  const tournamentTree = buildTournamentTree(definitiveMatches || [], tournamentResults);
 
   return (
     <main>
@@ -213,8 +312,37 @@ export default function LlavesPage() {
         </div>
       </nav>
 
+      {/* Barra de Notificación de Administrador Conectado */}
+      {isAdminLoggedIn && (
+        <div className="admin-status-sticky-bar">
+          <div className="admin-status-pill">
+            <span className="kick-live-pulse" style={{ background: '#00e676', boxShadow: '0 0 10px #00e676', width: '9px', height: '9px' }}></span>
+            <strong>CONECTADO COMO ADMINISTRADOR</strong>
+            <span className="admin-status-sep">·</span>
+            <span>Acceso completo para cargar resultados en vivo y editar cruces</span>
+          </div>
+          <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+            <button
+              type="button"
+              className="btn-admin-bar-action"
+              onClick={() => setResultadosModalOpen(true)}
+            >
+              ⚽ Cargar Resultados
+            </button>
+            <button
+              type="button"
+              className="btn-admin-logout"
+              onClick={handleAdminLogout}
+              title="Cerrar sesión de administrador en este navegador"
+            >
+              🚪 Cerrar Sesión
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Hero de Llaves */}
-      <section className="section-llaves-hero" style={{ paddingTop: '7rem', textAlign: 'center', paddingBottom: '2rem' }}>
+      <section className="section-llaves-hero" style={{ paddingTop: isAdminLoggedIn ? '9.5rem' : '7rem', textAlign: 'center', paddingBottom: '2rem' }}>
         <div className="section-label">
           <span className="label-line"></span>
           <span className="label-text">OCTAVOS DE FINAL · MATA MATA</span>
@@ -229,21 +357,33 @@ export default function LlavesPage() {
         {isAdminLoggedIn ? (
           <div className="admin-sorteo-toolbar fade-in visible">
             <div className="admin-toolbar-title">
-              <span>⚙️ PANEL DE CONTROL DE SORTEO</span>
-              <span className="admin-logged-tag">ADMIN AUTORIZADO</span>
+              <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span className="kick-live-pulse" style={{ background: '#00e676', boxShadow: '0 0 8px #00e676', width: '8px', height: '8px' }}></span>
+                <span>⚙️ PANEL DE CONTROL DEL EVENTO</span>
+              </span>
+              <span className="admin-logged-tag" style={{ background: '#00c853', color: '#000', fontWeight: 900 }}>
+                ✓ ADMIN CONECTADO
+              </span>
             </div>
             <div className="admin-toolbar-actions">
+              <button
+                className="btn-toolbar-official"
+                onClick={() => setResultadosModalOpen(true)}
+                style={{
+                  background: 'linear-gradient(135deg, #00c853, #009624)',
+                  color: '#fff',
+                  border: 'none',
+                  fontWeight: 900,
+                  boxShadow: '0 4px 15px rgba(0, 200, 83, 0.4)'
+                }}
+              >
+                ⚽ Cargar Resultados en Vivo
+              </button>
               <button
                 className="btn-toolbar-test"
                 onClick={() => openBolillero(true)}
               >
-                🎲 Sorteo de Prueba (Simulador)
-              </button>
-              <button
-                className="btn-toolbar-official"
-                onClick={() => openBolillero(false)}
-              >
-                🏆 Iniciar Sorteo Definitivo
+                🎲 Simular Bolillero
               </button>
               {definitiveMatches && (
                 <button
@@ -253,11 +393,32 @@ export default function LlavesPage() {
                   🔄 Resetear Sorteo
                 </button>
               )}
+              <button
+                type="button"
+                className="btn-toolbar-logout"
+                onClick={handleAdminLogout}
+                style={{
+                  background: 'rgba(255, 255, 255, 0.05)',
+                  border: '1px solid rgba(255, 255, 255, 0.15)',
+                  color: 'var(--grey-light)',
+                  padding: '8px 12px',
+                  borderRadius: '6px',
+                  fontSize: '0.8rem',
+                  fontWeight: 700,
+                  cursor: 'pointer'
+                }}
+              >
+                🚪 Cerrar Sesión
+              </button>
             </div>
           </div>
         ) : (
           <div className="public-sorteo-notice">
-            {definitiveMatches ? (
+            {tournamentTree?.campeon ? (
+              <div className="sorteo-status-badge official" style={{ background: 'linear-gradient(135deg, #FFD700, #ff8c00)', color: '#000', fontWeight: 900 }}>
+                <span>👑 ¡Torneo Finalizado! Campeón Consagrado: {tournamentTree.campeon.nick}</span>
+              </div>
+            ) : definitiveMatches ? (
               <div className="sorteo-status-badge official">
                 <span>🏆 Sorteo Oficial Confirmado para la Gran Final</span>
               </div>
@@ -274,7 +435,12 @@ export default function LlavesPage() {
       <section className="section-bracket-view" style={{ padding: '1rem 1rem 5rem' }}>
         <TournamentBracket
           matches={definitiveMatches || []}
+          tournamentTree={tournamentTree}
           isDefinitive={Boolean(definitiveMatches)}
+          isAdmin={isAdminLoggedIn}
+          onOpenEditMatch={() => {
+            setResultadosModalOpen(true);
+          }}
         />
       </section>
 
@@ -293,21 +459,42 @@ export default function LlavesPage() {
         </div>
 
         <div style={{ marginTop: '1.5rem', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '15px' }}>
-          {!isAdminLoggedIn && (
+          {!isAdminLoggedIn ? (
             <button
               onClick={() => setShowAdminLoginModal(true)}
               style={{
                 background: 'transparent',
-                border: '1px solid rgba(255,255,255,0.1)',
-                color: 'var(--grey)',
-                fontSize: '0.75rem',
-                padding: '4px 10px',
-                borderRadius: '4px',
+                border: '1px solid rgba(255,255,255,0.15)',
+                color: 'var(--grey-light)',
+                fontSize: '0.8rem',
+                fontWeight: 700,
+                padding: '6px 14px',
+                borderRadius: '6px',
                 cursor: 'pointer'
               }}
             >
-              🔒 Acceso Admin Sorteo
+              🔒 Iniciar Sesión de Administrador
             </button>
+          ) : (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+              <span style={{ fontSize: '0.8rem', color: '#00e676', fontWeight: 800 }}>
+                🟢 Sesión iniciada como Administrador
+              </span>
+              <button
+                onClick={handleAdminLogout}
+                style={{
+                  background: 'transparent',
+                  border: '1px solid rgba(255,255,255,0.15)',
+                  color: 'var(--grey-light)',
+                  fontSize: '0.75rem',
+                  padding: '4px 10px',
+                  borderRadius: '4px',
+                  cursor: 'pointer'
+                }}
+              >
+                Cerrar Sesión
+              </button>
+            </div>
           )}
         </div>
       </footer>
@@ -319,6 +506,16 @@ export default function LlavesPage() {
         allPlayers={playersList}
         isTestMode={bolilleroTestMode}
         onConfirmDefinitive={handleConfirmDefinitive}
+      />
+
+      {/* Modal de Carga de Resultados */}
+      <ResultadosModal
+        isOpen={resultadosModalOpen}
+        onClose={() => setResultadosModalOpen(false)}
+        tournamentTree={tournamentTree}
+        onSaveResult={handleSaveResult}
+        onClearResult={handleClearResult}
+        isSaving={isPending}
       />
 
       {/* Modal de Login de Admin para Llaves */}

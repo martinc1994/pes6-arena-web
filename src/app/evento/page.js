@@ -49,7 +49,7 @@ export default function EventoPage() {
             <span className="label-line"></span>
           </div>
           <h1 className="section-title centered">La Pasión del PES<br /><em>como nunca antes</em></h1>
-          <p className="hero-sub">📅 Domingo 22 de Noviembre · Inicia 13:00 HS · 📍 Microestadio de Garín</p>
+          <p className="hero-sub">📅 Domingo 22 de Noviembre · Inicia 12:00 HS · 📍 Microestadio de Garín</p>
           <div style={{ marginTop: '1.25rem', display: 'flex', gap: '0.85rem', justifyContent: 'center', flexWrap: 'wrap', alignItems: 'center' }}>
             <a
               href="https://maps.app.goo.gl/xgT5NWWxgguvCuZa7"
