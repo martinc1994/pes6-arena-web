@@ -4,13 +4,12 @@ import React, { useEffect, useState, useTransition } from 'react';
 import Link from 'next/link';
 import ThemeToggle from '@/components/ThemeToggle';
 import TournamentBracket from '@/components/TournamentBracket';
-import BolilleroModal from '@/components/BolilleroModal';
 import ResultadosModal from '@/components/ResultadosModal';
 import OFFICIAL_DEFINITIVE_MATCHES from '@/data/sorteoDefinitivo.json';
 import { getClasificadosConVotos, getDailyVoteBonus } from '@/lib/participantes';
 import { buildTournamentTree } from '@/lib/tournamentManager';
 import { supabase } from '@/lib/supabase';
-import { checkAdminPassword, saveSorteoDefinitivo, getSorteoDefinitivo, resetSorteoDefinitivo, saveTournamentResults } from '../actions';
+import { checkAdminPassword, getSorteoDefinitivo, saveTournamentResults } from '../actions';
 
 // Función auxiliar para refrescar fotos en el bracket definitivo con la última información de cada jugador
 const refreshMatchesWithLatestPlayers = (matchesArray, currentPlayers) => {
@@ -46,10 +45,6 @@ export default function LlavesPage() {
   const [adminPassInput, setAdminPassInput] = useState('');
   const [adminError, setAdminError] = useState('');
   const [isPending, startTransition] = useTransition();
-
-  // Bolillero modal state
-  const [bolilleroOpen, setBolilleroOpen] = useState(false);
-  const [bolilleroTestMode, setBolilleroTestMode] = useState(true);
 
   // Estado de resultados de partidos (Octavos, Cuartos, Semis, Final)
   const [tournamentResults, setTournamentResults] = useState({});
@@ -111,6 +106,8 @@ export default function LlavesPage() {
             });
             activeList = sorted;
             setPlayersList(sorted);
+            // Actualizar inmediatamente las llaves en pantalla con los jugadores más recientes de la base de datos
+            setDefinitiveMatches(prev => refreshMatchesWithLatestPlayers(prev || OFFICIAL_DEFINITIVE_MATCHES, sorted));
           }
         }
       } catch (err) {
@@ -128,17 +125,22 @@ export default function LlavesPage() {
               localStorage.setItem('pes6_definitive_bracket', JSON.stringify(refreshed));
             } catch (e) {}
           } else if (typeof saved === 'object' && saved.octavos) {
-            if (Array.isArray(saved.octavos)) {
-              setDefinitiveMatches(refreshMatchesWithLatestPlayers(saved.octavos, activeList));
-            }
+            // saved son los resultados de partidos en vivo
             setTournamentResults(saved);
+            // Aseguramos que los cruces base de octavos siempre tengan los jugadores actualizados (reemplazos/fotos)
+            const refreshed = refreshMatchesWithLatestPlayers(OFFICIAL_DEFINITIVE_MATCHES, activeList);
+            setDefinitiveMatches(refreshed);
             try {
               localStorage.setItem('pes6_tournament_results', JSON.stringify(saved));
+              localStorage.setItem('pes6_definitive_bracket', JSON.stringify(refreshed));
             } catch (e) {}
           }
+        } else {
+          setDefinitiveMatches(refreshMatchesWithLatestPlayers(OFFICIAL_DEFINITIVE_MATCHES, activeList));
         }
       } catch (err) {
         console.warn('No se pudo obtener sorteo de base de datos:', err);
+        setDefinitiveMatches(refreshMatchesWithLatestPlayers(OFFICIAL_DEFINITIVE_MATCHES, activeList));
       } finally {
         setLoading(false);
       }
@@ -253,42 +255,6 @@ export default function LlavesPage() {
     showToast('Sesión de administrador cerrada', 'warning');
   };
 
-  const openBolillero = (testMode) => {
-    setBolilleroTestMode(testMode);
-    setBolilleroOpen(true);
-  };
-
-  const handleConfirmDefinitive = async (matchesDrawn) => {
-    const pass = (typeof window !== 'undefined' ? (localStorage.getItem('pes6_admin_pass') || sessionStorage.getItem('pes6_admin_pass')) : '') || '';
-    const res = await saveSorteoDefinitivo(pass, matchesDrawn);
-
-    if (res && res.error) {
-      showToast(res.error, 'warning');
-      throw new Error(res.error);
-    }
-
-    setDefinitiveMatches(matchesDrawn);
-    try {
-      localStorage.setItem('pes6_definitive_bracket', JSON.stringify(matchesDrawn));
-    } catch (e) {}
-
-    setBolilleroOpen(false);
-    showToast('🏆 ¡Sorteo oficial publicado con éxito en toda la web!', 'success');
-  };
-
-  const handleResetDefinitive = async () => {
-    if (!confirm('¿Estás seguro de reiniciar el sorteo definitivo? La web volverá a mostrar el cuadro como pendiente.')) {
-      return;
-    }
-    const pass = (typeof window !== 'undefined' ? (localStorage.getItem('pes6_admin_pass') || sessionStorage.getItem('pes6_admin_pass')) : '') || '';
-    await resetSorteoDefinitivo(pass);
-    setDefinitiveMatches(null);
-    try {
-      localStorage.removeItem('pes6_definitive_bracket');
-    } catch (e) {}
-    showToast('Sorteo oficial reiniciado', 'success');
-  };
-
   const tournamentTree = buildTournamentTree(definitiveMatches || [], tournamentResults);
 
   return (
@@ -380,20 +346,6 @@ export default function LlavesPage() {
                 ⚽ Cargar Resultados en Vivo
               </button>
               <button
-                className="btn-toolbar-test"
-                onClick={() => openBolillero(true)}
-              >
-                🎲 Simular Bolillero
-              </button>
-              {definitiveMatches && (
-                <button
-                  className="btn-toolbar-reset"
-                  onClick={handleResetDefinitive}
-                >
-                  🔄 Resetear Sorteo
-                </button>
-              )}
-              <button
                 type="button"
                 className="btn-toolbar-logout"
                 onClick={handleAdminLogout}
@@ -401,7 +353,7 @@ export default function LlavesPage() {
                   background: 'rgba(255, 255, 255, 0.05)',
                   border: '1px solid rgba(255, 255, 255, 0.15)',
                   color: 'var(--grey-light)',
-                  padding: '8px 12px',
+                  padding: '8px 14px',
                   borderRadius: '6px',
                   fontSize: '0.8rem',
                   fontWeight: 700,
@@ -458,22 +410,30 @@ export default function LlavesPage() {
           <Link href="/llaves" style={{ color: 'var(--gold)', textDecoration: 'none', fontSize: '0.85rem' }}>Llaves</Link>
         </div>
 
-        <div style={{ marginTop: '1.5rem', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '15px' }}>
+        <div style={{ marginTop: '1.5rem', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
           {!isAdminLoggedIn ? (
             <button
               onClick={() => setShowAdminLoginModal(true)}
+              title="Ajustes"
+              aria-label="Ajustes"
               style={{
-                background: 'transparent',
-                border: '1px solid rgba(255,255,255,0.15)',
-                color: 'var(--grey-light)',
-                fontSize: '0.8rem',
-                fontWeight: 700,
-                padding: '6px 14px',
-                borderRadius: '6px',
-                cursor: 'pointer'
+                background: 'rgba(255,255,255,0.04)',
+                border: '1px solid rgba(255,255,255,0.12)',
+                color: 'rgba(255,255,255,0.35)',
+                width: '32px',
+                height: '32px',
+                borderRadius: '50%',
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: '0.85rem',
+                cursor: 'pointer',
+                transition: 'all 0.2s ease',
               }}
+              onMouseEnter={(e) => { e.currentTarget.style.color = 'var(--gold)'; e.currentTarget.style.borderColor = 'var(--gold)'; e.currentTarget.style.background = 'rgba(255,215,0,0.08)'; }}
+              onMouseLeave={(e) => { e.currentTarget.style.color = 'rgba(255,255,255,0.35)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.12)'; e.currentTarget.style.background = 'rgba(255,255,255,0.04)'; }}
             >
-              🔒 Iniciar Sesión de Administrador
+              ⚙️
             </button>
           ) : (
             <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
@@ -498,15 +458,6 @@ export default function LlavesPage() {
           )}
         </div>
       </footer>
-
-      {/* Modal Bolillero con Animaciones y Sonido */}
-      <BolilleroModal
-        isOpen={bolilleroOpen}
-        onClose={() => setBolilleroOpen(false)}
-        allPlayers={playersList}
-        isTestMode={bolilleroTestMode}
-        onConfirmDefinitive={handleConfirmDefinitive}
-      />
 
       {/* Modal de Carga de Resultados */}
       <ResultadosModal

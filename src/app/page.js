@@ -439,7 +439,7 @@ export default function Home() {
                     ⚽ Cuadro y Resultados del Evento
                   </div>
                   <div style={{ fontSize: '0.75rem', color: 'var(--grey-light)', marginTop: '2px' }}>
-                    Cargá los goles de los partidos en vivo o administrá el bolillero de llaves.
+                    Cargá los goles de los partidos en vivo a medida que transcurra el torneo.
                   </div>
                 </div>
                 <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
@@ -460,41 +460,29 @@ export default function Home() {
                     onClick={() => {
                       sessionStorage.setItem('pes6_admin_logged', 'true');
                       sessionStorage.setItem('pes6_admin_pass', adminPass);
+                      try {
+                        localStorage.setItem('pes6_admin_logged', 'true');
+                        localStorage.setItem('pes6_admin_pass', adminPass);
+                      } catch (e) {}
                     }}
                   >
-                    ⚽ Cargar Resultados →
-                  </Link>
-                  <Link
-                    href="/llaves?admin=true"
-                    style={{
-                      background: 'var(--gold)',
-                      color: '#000',
-                      fontWeight: 900,
-                      fontSize: '0.8rem',
-                      padding: '8px 14px',
-                      borderRadius: '6px',
-                      textDecoration: 'none',
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      gap: '4px'
-                    }}
-                    onClick={() => {
-                      sessionStorage.setItem('pes6_admin_logged', 'true');
-                      sessionStorage.setItem('pes6_admin_pass', adminPass);
-                    }}
-                  >
-                    Abrir Bolillero →
+                    ⚽ Cargar Resultados de Llaves →
                   </Link>
                 </div>
               </div>
 
-              <div style={{ fontSize: '0.8rem', fontWeight: 'bold', color: 'var(--gold)', letterSpacing: '1px', textTransform: 'uppercase', marginBottom: '10px' }}>
+              <div style={{ fontSize: '0.8rem', fontWeight: 'bold', color: 'var(--gold)', letterSpacing: '1px', textTransform: 'uppercase', marginBottom: '8px' }}>
                 Gestión de Participantes ({clasificados.length}/{TOTAL_SLOTS})
               </div>
 
-              <div style={{ background: 'rgba(255,255,255,0.05)', padding: '15px', borderRadius: '8px', marginBottom: '20px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              {/* Aviso para reemplazos seguros en llaves */}
+              <div style={{ background: 'rgba(255,215,0,0.08)', border: '1px solid rgba(255,215,0,0.3)', padding: '10px 14px', borderRadius: '8px', fontSize: '0.78rem', color: 'var(--gold)', marginBottom: '14px', lineHeight: 1.5 }}>
+                ℹ️ <strong>Cupos completos y llaves sorteadas:</strong> Para realizar un reemplazo de jugador, pulsá <strong>✏️ EDITAR / REEMPLAZAR</strong> en la lista de abajo. Así se actualiza su nombre, equipo y foto manteniendo automáticamente su lugar en el cuadro del torneo.
+              </div>
+
+              <div id="admin-edit-form-anchor" style={{ background: 'rgba(255,255,255,0.05)', padding: '15px', borderRadius: '8px', marginBottom: '20px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
                 <div style={{ fontSize: '0.8rem', fontWeight: 'bold', color: 'var(--gold)', letterSpacing: '1px', textTransform: 'uppercase' }}>
-                  {editMode ? 'Editar Participante' : 'Agregar Nuevo Participante'}
+                  {editMode ? `Editar / Reemplazar Participante (${cNick || 'Seleccionado'})` : 'Formulario de Participante'}
                 </div>
 
                 <input type="text" placeholder="Nick / Nombre" value={cNick} onChange={e => setCNick(e.target.value)} style={{ padding: '8px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: 'white', borderRadius: '6px' }} />
@@ -571,7 +559,7 @@ export default function Home() {
                     cancelEdit();
                     fetchDatos();
                   } catch (e) { showToast(e.message || 'Error al guardar', 'warning'); } finally { setUploading(false); }
-                }}>{uploading ? 'GUARDANDO...' : (editMode ? 'GUARDAR CAMBIOS' : (clasificados.length >= TOTAL_SLOTS ? 'MÁXIMO ALCANZADO' : 'AGREGAR PARTICIPANTE'))}</button>
+                }}>{uploading ? 'GUARDANDO...' : (editMode ? 'GUARDAR REEMPLAZO / CAMBIOS' : (clasificados.length >= TOTAL_SLOTS ? 'MÁXIMO ALCANZADO (SELECCIONAR ABAJO)' : 'AGREGAR PARTICIPANTE'))}</button>
 
                 {editMode && (
                   <button className="btn-ghost" style={{ padding: '8px', border: '1px solid rgba(255,255,255,0.2)', color: 'white', borderRadius: '5px', fontWeight: 'bold', cursor: 'pointer' }} onClick={cancelEdit}>CANCELAR EDICIÓN</button>
@@ -600,13 +588,28 @@ export default function Home() {
                       <div style={{ fontSize: '0.8rem', color: 'var(--gold)' }}>{c.equipo || 'Sin Equipo'}</div>
                     </div>
                     <div style={{ display: 'flex', gap: '8px' }}>
-                      <button style={{ background: 'rgba(255,215,0,0.15)', border: '1px solid var(--gold)', color: 'var(--gold)', padding: '5px 10px', borderRadius: '5px', cursor: 'pointer' }} onClick={() => startEdit(c)}>✏️</button>
-                      <button style={{ background: 'rgba(232,0,61,0.2)', border: '1px solid var(--red)', color: 'var(--red)', padding: '5px 10px', borderRadius: '5px', cursor: 'pointer' }} onClick={async () => {
-                        if (confirm('¿Eliminar?')) {
-                          await removeClasificado(adminPass, c.id);
-                          fetchDatos();
-                        }
-                      }}>✕</button>
+                      <button
+                        style={{
+                          background: 'rgba(255,215,0,0.15)',
+                          border: '1px solid var(--gold)',
+                          color: 'var(--gold)',
+                          padding: '6px 12px',
+                          borderRadius: '5px',
+                          cursor: 'pointer',
+                          fontWeight: 700,
+                          fontSize: '0.75rem',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '5px'
+                        }}
+                        onClick={() => {
+                          startEdit(c);
+                          const el = document.getElementById('admin-edit-form-anchor');
+                          if (el) el.scrollIntoView({ behavior: 'smooth' });
+                        }}
+                      >
+                        ✏️ EDITAR / REEMPLAZAR
+                      </button>
                     </div>
                   </div>
                 ))}
